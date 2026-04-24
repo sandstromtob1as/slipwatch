@@ -1,37 +1,31 @@
-from openai import OpenAI
-from dotenv import load_dotenv
-import json
 import os
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# Sökvägar
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, "..", ".env"))
+# Load environment variables
+load_dotenv()
 
-# Läs in JSON
-json_path = os.path.join(BASE_DIR, "test_file.json")
-with open(json_path, "r") as f:
-    data = json.load(f)
+# Get API key
+api_key = os.getenv("OPENAI_API_KEY")
 
-# Ta bort timestamp
-timestamp = data.pop("timestamp")
+# Initialize client
+client = OpenAI(api_key=api_key)
 
-# Anropa ChatGPT
-client = OpenAI()
+# Make a request
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
         {
-            "role": "system",
-            "content": "Du är ett säkerhetssystem för äldre personer. "
-                       "Skriv ett kort SMS-meddelande till en anhörig "
-                       "som förklarar vad som hänt. Max 3 meningar."
-        },
-        {
-            "role": "user",
-            "content": f"Tidpunkt: {timestamp}\nData: {json.dumps(data, ensure_ascii=False)}"
-        }
+    "role": "system",
+    "content": "You are a safety assistant for a senior monitoring system. "
+               "When given a sensor log, write a calm and clear 2-3 sentence "
+               "SMS message to a relative explaining what happened. "
+               "Be reassuring but honest. Do not be alarmist or dramatic. "
+               "Always mention the time and location of the incident."
+},
+        {"role": "user", "content": "12:03:45 | person lying on floor | no movement | 90 seconds | sudden position change | kitchen | hard floor tiles | last upright 12:01:55"}
     ]
 )
 
-print("\n### SMS-MEDDELANDE ###")
+# Print result
 print(response.choices[0].message.content)

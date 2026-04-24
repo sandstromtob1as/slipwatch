@@ -6,7 +6,8 @@ import numpy as np
 import json
 
 # Add SGG_Bench to path so we can import the standalone ONNX demo
-sys.path.append(os.path.abspath('SGG_Bench'))
+sgg_bench_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench'))
+sys.path.append(sgg_bench_path)
 from standalone_onnx_demo import SGG_ONNX_Standalone
 
 # Conceptual imports from llmSHAP based on its README framework
@@ -52,7 +53,7 @@ class FallDetectionExplainer:
         person_keywords = ['person', 'man', 'woman', 'boy', 'girl', 'child', 'human', 'body', 'people', 'patient']
         important_classes = person_keywords + ['floor', 'carpet', 'rug', 'ground', 'couch', 'bed', 'chair', 'table', 'desk']
         
-        # Identify smaller person hitboxes inside larger person hitboxes to ignore them
+        # Identify smaller person hitboxes that touch larger person hitboxes to ignore them
         ignored_person_indices = set()
         person_indices = []
         for i, box in enumerate(boxes):
@@ -71,9 +72,8 @@ class FallDetectionExplainer:
                     inter_x1, inter_y1 = max(xi1, xj1), max(yi1, yj1)
                     inter_x2, inter_y2 = min(xi2, xj2), min(yi2, yj2)
                     if inter_x2 > inter_x1 and inter_y2 > inter_y1:
-                        inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
-                        if inter_area / area_i > 0.8: # If mostly inside the larger box
-                            ignored_person_indices.add(i)
+                    # If they touch/intersect at all, ignore the smaller box
+                    ignored_person_indices.add(i)
 
         keep_box_indices = []
         floors_detected = []
@@ -225,8 +225,8 @@ class FallDetectionExplainer:
         leeway_seconds = 1.5  # Duration to keep progress if a frame is dropped
         
         # Create directories for saving falls data
-        img_dir = "falls_images"
-        json_dir = "falls_data"
+        img_dir = os.path.join(os.path.dirname(__file__), "falls_images")
+        json_dir = os.path.join(os.path.dirname(__file__), "falls_data")
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(json_dir, exist_ok=True)
         
@@ -304,7 +304,7 @@ class FallDetectionExplainer:
 if __name__ == "__main__":
     # Example Usage
     # Make sure to download the IndoorVG model first as it contains 'person', 'floor', and 'laying on'
-    onnx_model_path = "SGG_Bench/react_indoorvg_yolov8m.onnx"
+    onnx_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx'))
     
     if not os.path.exists(onnx_model_path):
         print(f"Please download the model first to {onnx_model_path}")
