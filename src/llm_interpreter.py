@@ -15,8 +15,15 @@ client = OpenAI(api_key=api_key)
 response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
-        {"role": "system", "content": "You rewrite logs from a senior accident tracking system and your job is to inform relatives with a short message that something has happened"},
-        {"role": "user", "content": "11:45 Person fell on ground, 11:48 No movement yet, 12:02 Person still on the ground"}
+        {
+    "role": "system",
+    "content": "You are a safety assistant for a senior monitoring system. "
+               "When given a sensor log, write a calm and clear 2-3 sentence "
+               "SMS message to a relative explaining what happened. "
+               "Be reassuring but honest. Do not be alarmist or dramatic. "
+               "Always mention the time and location of the incident."
+},
+        {"role": "user", "content": "12:03:45 | person lying on floor | no movement | 90 seconds | sudden position change | kitchen | hard floor tiles | last upright 12:01:55"}
     ]
 )
 
