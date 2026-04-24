@@ -1,0 +1,9 @@
+{
+    "timestamp": "12:03:45",
+    "person_position": "person lying on floor",
+    "nearby_surface": "hard surface",
+    "movement": "no movement detected",
+    "stationary_duration": "90 seconds",
+    "sudden_position_change": "yes",
+    "location": "kitchen"
+}
