@@ -17,7 +17,7 @@ def send_sms(message: str) -> None:
     print("✅ SMS skickat!")
 
 def send_dummy_sms(message: str) -> None:
-    print(f"\n📱 [DUMMY SMS] till {os.getenv('RECIPIENT_PHONE_NUMBER')}:")
+    print(f"\n📱 Text message to {os.getenv('RECIPIENT_PHONE_NUMBER')}:")
     print(message)
 
 #if __name__ == "__main__":
@@ -27,7 +27,7 @@ def send_dummy_sms(message: str) -> None:
 #        data={
 #            "from": "SlipWatch",
 #            "to": os.getenv("RECIPIENT_PHONE_NUMBER"),
-#            "message": "Mamma: Hjälp mig!"
+#            "message": message
 #        }
 #    )
 #    print(f"Status: {response.status_code}")
