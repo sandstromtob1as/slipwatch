@@ -13,12 +13,12 @@ from standalone_onnx_demo import SGG_ONNX_Standalone
 
 # How long a relation must persist before triggering an alert (seconds)
 RELATION_THRESHOLDS = {
-    'falling off':  2.0,   # Almost always dangerous
-    'lying on':     2.0,   # Could be yoga, but unlikely for elderly
-    'laying on':    2.0,
-    'on':           2.0,   # Ambiguous, require more time
-    'sitting on':  2.0,   # Give more time before alerting
-    'touching':    2.0,
+    'falling off':  5.0,   # Almost always dangerous
+    'lying on':     5.0,   # Could be yoga, but unlikely for elderly
+    'laying on':    5.0,
+    'on':           5.0,   # Ambiguous, require more time
+    'sitting on':  5.0,   # Give more time before alerting
+    'touching':    5.0,
 }
 
 ALERT_COOLDOWN = 60.0      # Seconds between alerts
@@ -262,7 +262,7 @@ class FallDetectionExplainer:
                 # Start timer for this relation if not already started
                 if trigger_relation not in relation_start_times:
                     relation_start_times[trigger_relation] = current_time
-                    print(f"⏱ Started timer for: {trigger_relation}")
+                    print(f"Started timer for: {trigger_relation}")
 
                 required_duration = RELATION_THRESHOLDS.get(trigger_relation, 5.0)
                 elapsed = current_time - relation_start_times[trigger_relation]

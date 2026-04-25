@@ -65,10 +65,10 @@ def run_shap(incident: FallIncident, on_complete=None) -> dict:
             data[f"feature_{len(data)}"] = clean
 
     if not data:
-        print("⚠️ llmSHAP: inga features att analysera")
+        print("llmSHAP: no more features to analyze")
         return {}
 
-    print(f"\n🔍 llmSHAP analyserar incident {incident.id} med features: {data}")
+    print(f"\nllmSHAP is analyzing {incident.id} with features: {data}")
 
     handler = DataHandler(data)
 
@@ -118,7 +118,7 @@ def run_shap(incident: FallIncident, on_complete=None) -> dict:
     with open(shap_path, "w") as f:
         json.dump(output, f, indent=4)
 
-    print(f"✅ llmSHAP klar för incident {incident.id}: {readable_attribution}")
+    print(f"llmSHAP finished processing incident {incident.id}: {readable_attribution}")
 
     if on_complete:
         on_complete(output)

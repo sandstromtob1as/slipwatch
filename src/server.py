@@ -54,7 +54,7 @@ def add_shap_result(incident_id: int, result: dict):
             i["shap_ready"] = True
             i["shap"] = result
             break
-    print(f"📊 SHAP result added for incident {incident_id}")
+    print(f"SHAP result added for incident {incident_id}")
 
 
 @app.post("/incidents")

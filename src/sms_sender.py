@@ -14,10 +14,10 @@ def send_sms(message: str) -> None:
             "message": message
         }
     )
-    print("✅ SMS skickat!")
+    print("Text message sent")
 
 def send_dummy_sms(message: str) -> None:
-    print(f"\n📱 Text message to {os.getenv('RECIPIENT_PHONE_NUMBER')}:")
+    print(f"\nText message to {os.getenv('RECIPIENT_PHONE_NUMBER')}:")
     print(message)
 
 #if __name__ == "__main__":

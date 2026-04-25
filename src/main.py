@@ -41,7 +41,7 @@ def post_to_dashboard(incident: FallIncident):
         "screenshot_path": incident.screenshot_path,
         "sms_message": incident.sms_message,
     })
-    print("✅ Incident tillagd i dashboard")
+    print("Incident added to dashboard")
 
 
 def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncident:
@@ -65,7 +65,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     # 1. Skapa incident
     incident = FallIncident(
         timestamp=time.strftime("%H:%M:%S"),
-        location=os.getenv("CAMERA_LOCATION", "unknown"),
+        location=os.getenv("CAMERA_LOCATION", "Living Room"),
         triggered_by=triggered_by,
         last_upright_position=last_upright,
         screenshot_path=screenshot_path
@@ -73,7 +73,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
 
     # 2. Generera SMS
     incident.sms_message = generate_sms(incident)
-    print(f"\n📱 SMS:\n{incident.sms_message}")
+    #print(f"\nText message:\n{incident.sms_message}")
 
     # 3. Skicka SMS
     # send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
@@ -90,7 +90,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
         on_complete=lambda result: add_shap_result(incident.id, result)
     )
 
-    print(f"\n✅ Incident skapad med ID: {incident.id}")
+    print(f"\nIncident created with ID: {incident.id}")
     return incident
 
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     )
 
     if not os.path.exists(onnx_model_path):
-        print(f"❌ ONNX-modellen saknas: {onnx_model_path}")
+        print(f"ERROR: the ONNX-model is missing: {onnx_model_path}")
         sys.exit(1)
 
     # Starta FastAPI i bakgrunden
@@ -114,9 +114,9 @@ if __name__ == "__main__":
         daemon=True
     )
     server_thread.start()
-    print("✅ Dashboard API körs på http://localhost:8000")
+    print("Dashboard API is running on http://localhost:8000")
 
     # Starta detektor
-    print("🚀 Startar SlipWatch...")
+    print("Starting SlipWatch...")
     detector = FallDetectionExplainer(onnx_path=onnx_model_path)
     detector.run_webcam(on_fall_callback=on_fall_detected)
