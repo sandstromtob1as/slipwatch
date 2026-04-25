@@ -4,7 +4,7 @@ import os
 import sys
 from models import FallIncident
 from llm_interpreter import generate_sms
-from sms_sender import send_dummy_sms
+from sms_sender import send_sms, send_dummy_sms
 
 def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncident:
     
@@ -34,8 +34,9 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     incident.sms_message = generate_sms(incident)
     print(f"\n📱 SMS:\n{incident.sms_message}")
 
-    # 3. Skicka SMS (dummy)
-    send_dummy_sms(incident.sms_message)
+    # 3. Skicka SMS
+    #send_sms(incident.sms_message) #ANVÄND ENDAST FÖR DEMO!!
+    send_dummy_sms(incident.sms_message) #Dummy sms för utveckling
 
     print(f"\n✅ Incident skapad med ID: {incident.id}")
     return incident
