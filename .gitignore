@@ -1,2 +1,4 @@
 .env
 *.onnx
+src/falls_data/*
+src/falls_images/*
