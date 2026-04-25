@@ -13,3 +13,12 @@ cd frontend && npm install
 cd frontend && npm run dev
 # Terminal 2:
 .venv/bin/python src/main.py
+
+# .env file
+OPENAI_API_KEY=<key> 
+
+ELKS_USERNAME=<username>
+ELKS_PASSWORD=<password>
+RECIPIENT_PHONE_NUMBER=<number>
+
+CAMERA_LOCATION=<location>
