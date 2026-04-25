@@ -1,265 +1,232 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
-  CardContent,
+  CardHeader,
+  CardMedia,
+  Button,
+  Chip,
   Box,
   Typography,
   Container,
-  Grid,
-  Button,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  CardHeader,
-  CardMedia,
 } from '@mui/material';
 import WarningIcon from '@mui/icons-material/Warning';
-import PeopleIcon from '@mui/icons-material/People';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SecurityIcon from '@mui/icons-material/Security';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import PhoneIcon from '@mui/icons-material/Phone';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
-interface FallAlert {
-  id: string;
-  personName: string;
+interface Incident {
+  id: number;
   timestamp: string;
   location: string;
-  fallConfidence: number;
-  aiExplanation: string;
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relation: string;
-  };
+  triggered_by: string[];
+  last_upright_position: string;
+  image_url: string | null;
+  sms_message: string | null;
 }
 
+const API_URL = 'http://localhost:8000';
+
 export default function Home() {
-  const [alerts] = useState<FallAlert[]>([
-    {
-      id: '1',
-      personName: 'Margaret Johnson',
-      timestamp: '2025-04-24 14:32:45',
-      location: 'Living Room',
-      fallConfidence: 0.94,
-      aiExplanation:
-        'High-confidence fall detected. Person is on the ground with rapid downward motion detected. Elderly person appears to need immediate assistance.',
-      emergencyContact: {
-        name: 'John Johnson',
-        phone: '+1 (555) 123-4567',
-        relation: 'Son',
-      },
-    },
-    {
-      id: '2',
-      personName: 'Robert Davis',
-      timestamp: '2025-04-24 10:15:22',
-      location: 'Bathroom',
-      fallConfidence: 0.6,
-      aiExplanation:
-        'Fall detected near bathroom. Person appears to have slipped. Alert sent due to extended time on ground.',
-      emergencyContact: {
-        name: 'Sarah Davis',
-        phone: '+1 (555) 234-5678',
-        relation: 'Daughter',
-      },
-    },
-  ]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [selected, setSelected] = useState<Incident | null>(null);
+  const [apiOnline, setApiOnline] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  const [selectedAlert, setSelectedAlert] = useState<FallAlert | null>(null);
-  const [openDetails, setOpenDetails] = useState(false);
+  useEffect(() => {
+    const fetchIncidents = async () => {
+      try {
+        const res = await fetch(`${API_URL}/incidents`);
+        const data = await res.json();
+        setIncidents(data);
+        setApiOnline(true);
+        setLastUpdated(new Date());
+      } catch {
+        setApiOnline(false);
+      }
+    };
 
-  const getConfidenceColor = (confidence: number): 'error' | 'warning' | 'success' => {
-    if (confidence >= 0.9) return 'error';
-    if (confidence >= 0.7) return 'warning';
-    return 'success';
-  };
-
-  const handleViewDetails = (alert: FallAlert) => {
-    setSelectedAlert(alert);
-    setOpenDetails(true);
-  };
-
-  const handleCloseDetails = () => {
-    setOpenDetails(false);
-    setSelectedAlert(null);
-  };
+    fetchIncidents();
+    const interval = setInterval(fetchIncidents, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen py-8">
       <Container maxWidth="lg">
-        <Box className="mb-8">
-          <Typography
-            variant="h2"
-            className="font-bold text-white mb-2 flex items-center gap-3"
-          >
-            Overview
-          </Typography>
-          <Typography variant="body1" className="text-gray-300">
-            Active alerts are displayed here with AI analysis and emergency contact information so you can respond quickly.
-          </Typography>
+        <Box className="mb-8 flex items-start justify-between">
+          <Box>
+            <Typography variant="h2" className="font-bold text-white mb-2">
+              Overview
+            </Typography>
+            <Typography variant="body1" className="text-gray-300">
+              Real-time fall alerts with AI analysis.
+            </Typography>
+          </Box>
+          <Box className="text-right flex flex-col items-end gap-1">
+            <Chip
+              icon={apiOnline ? <CheckCircleIcon /> : <WarningIcon />}
+              label={apiOnline ? 'System Online' : 'System Offline'}
+              color={apiOnline ? 'success' : 'error'}
+              size="small"
+            />
+            <Typography variant="caption" className="text-gray-500">
+              Updated {lastUpdated.toLocaleTimeString()}
+            </Typography>
+          </Box>
         </Box>
 
-        {alerts.length > 0 ? (
+        {incidents.length > 0 ? (
           <Box className="flex flex-col gap-6">
-            {alerts.map((alert) => (
-              <Card key={alert.id} sx={{ backgroundColor: '#1f2937', borderColor: '#374151' }} className="border border-gray-700 shadow-lg transition-shadow duration-300">
+            {incidents.map((incident) => (
+              <Card
+                key={incident.id}
+                sx={{ backgroundColor: '#1f2937', borderColor: '#374151' }}
+                className="border border-gray-700 shadow-lg"
+              >
                 <Box className="lg:flex">
-                  <CardMedia
-                    component="div"
-                    className="lg:w-2/3 h-52 lg:h-auto bg-gray-700 flex items-center justify-center"
-                  >
-                    <Typography className="text-gray-400">Camera preview image</Typography>
-                  </CardMedia>
-                  <Box className="p-6 lg:w-1/3">
-                    <CardHeader
-                      title={
-                        <Typography variant="h5" className="font-bold text-white">
-                          {alert.personName}
-                        </Typography>
-                      }
-                      subheader={
-                        <Box className="flex flex-col gap-1 mt-1">
-                          <Typography variant="caption" className="text-gray-400">
-                            {alert.timestamp}
-                          </Typography>
-                          <Typography variant="caption" className="flex items-center gap-1 text-gray-300">
-                            <LocationOnIcon fontSize="small" />
-                            {alert.location}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    <Box className="mb-4">
-                      <Typography variant="subtitle2" className="font-semibold text-gray-100 mb-2">
-                        AI Explanation
+                  <Box className="lg:w-2/3 h-64 lg:h-auto bg-gray-800 flex items-center justify-center overflow-hidden relative">
+                    {incident.image_url ? (
+                      <img
+                        src={incident.image_url}
+                        alt="Fall detected"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Typography className="text-gray-500">No image</Typography>
+                    )}
+                    <Box className="absolute top-3 left-3">
+                      <Chip
+                        icon={<WarningIcon />}
+                        label="FALL DETECTED"
+                        color="error"
+                        size="small"
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box className="p-6 lg:w-1/3 flex flex-col gap-4">
+                    <Box>
+                      <Typography variant="caption" className="text-gray-400 flex items-center gap-1">
+                        <AccessTimeIcon fontSize="small" /> {incident.timestamp}
                       </Typography>
-                      <Typography variant="body2" className="text-gray-300 p-3 rounded-md bg-blue-900 border-l-4 border-blue-500">
-                        {alert.aiExplanation}
+                      <Typography variant="caption" className="text-gray-400 flex items-center gap-1 mt-1">
+                        <LocationOnIcon fontSize="small" /> {incident.location}
                       </Typography>
                     </Box>
-                    <Box className="bg-red-900 p-4 rounded-md border-l-4 border-red-500 mb-4">
-                      <Typography variant="subtitle2" className="font-semibold text-gray-100 mb-2">
-                        Emergency Contact
-                      </Typography>
-                      <Typography variant="body2" className="text-gray-100 font-medium">
-                        {alert.emergencyContact.name}
-                      </Typography>
-                      <Typography variant="caption" className="text-gray-400">
-                        {alert.emergencyContact.relation}
-                      </Typography>
-                      <Box className="mt-2 flex items-center gap-2">
-                        <PhoneIcon fontSize="small" className="text-red-400" />
-                        <Typography variant="body2" className="font-mono text-red-400 font-semibold">
-                          {alert.emergencyContact.phone}
+
+                    {incident.sms_message && (
+                      <Box>
+                        <Typography variant="subtitle2" className="font-semibold text-gray-100 mb-1">
+                          AI Analysis
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          className="text-gray-300 p-3 rounded-md bg-blue-900 border-l-4 border-blue-500"
+                        >
+                          {incident.sms_message}
                         </Typography>
                       </Box>
+                    )}
+
+                    <Box>
+                      <Typography variant="subtitle2" className="font-semibold text-gray-100 mb-1">
+                        Triggered by
+                      </Typography>
+                      <Box className="flex flex-wrap gap-1">
+                        {incident.triggered_by.map((t, i) => (
+                          <Chip
+                            key={i}
+                            label={t}
+                            size="small"
+                            sx={{ backgroundColor: '#374151', color: '#d1d5db', fontSize: '0.7rem' }}
+                          />
+                        ))}
+                      </Box>
                     </Box>
-                    <Box className="flex flex-col gap-3 sm:flex-row">
-                      <Button variant="contained" color="error" fullWidth startIcon={<PhoneIcon />}>
-                        Call Now
-                      </Button>
-                      <Button variant="outlined" fullWidth onClick={() => handleViewDetails(alert)}>
-                        Details
-                      </Button>
-                    </Box>
+
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => setSelected(incident)}
+                      className="mt-auto"
+                    >
+                      View Details
+                    </Button>
                   </Box>
                 </Box>
               </Card>
             ))}
           </Box>
         ) : (
-          <Card sx={{ backgroundColor: '#1f2937' }} className="p-8 text-center border border-gray-700">
-            <Typography variant="h6" className="text-gray-400">
-              No active alerts at the moment.
+          <Card sx={{ backgroundColor: '#1f2937' }} className="p-12 text-center border border-gray-700">
+            <CheckCircleIcon sx={{ fontSize: 48, color: '#4ade80', marginBottom: 2 }} />
+            <Typography variant="h6" className="text-gray-300">
+              No falls detected — system is monitoring
             </Typography>
           </Card>
         )}
       </Container>
 
       <Dialog
-        open={openDetails}
-        onClose={handleCloseDetails}
+        open={!!selected}
+        onClose={() => setSelected(null)}
         maxWidth="sm"
         fullWidth
-        sx={{
-          '& .MuiDialog-paper': {
-            backgroundColor: '#1f2937',
-            color: '#fff',
-          },
-        }}
+        sx={{ '& .MuiDialog-paper': { backgroundColor: '#1f2937', color: '#fff' } }}
       >
-        {selectedAlert && (
+        {selected && (
           <>
             <DialogTitle className="bg-red-900 border-b-2 border-red-500">
               <Box className="flex items-center gap-2">
                 <WarningIcon className="text-red-400" />
                 <Typography variant="h6" className="font-bold text-white">
-                  {selectedAlert.personName} - Detailed Report
+                  Incident Details
                 </Typography>
               </Box>
             </DialogTitle>
-            <DialogContent className="mt-4 bg-gray-800">
-              <Box className="flex flex-col gap-4">
+            <DialogContent className="pt-4">
+              <Box className="flex flex-col gap-4 mt-2">
+                {selected.image_url && (
+                  <img src={selected.image_url} alt="Fall" className="w-full rounded-lg" />
+                )}
                 <Box>
-                  <Typography variant="subtitle2" className="font-semibold mb-1 text-gray-100">
-                    Incident Time
-                  </Typography>
-                  <Typography variant="body2" className="text-gray-300">
-                    {selectedAlert.timestamp}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" className="font-semibold mb-1 text-gray-100">
-                    Location
-                  </Typography>
-                  <Typography variant="body2" className="text-gray-300">
-                    {selectedAlert.location}
-                  </Typography>
+                  <Typography variant="subtitle2" className="text-gray-400">Time</Typography>
+                  <Typography variant="body2" className="text-white">{selected.timestamp}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" className="font-semibold mb-1 text-gray-100">
-                    Fall Confidence Score
-                  </Typography>
-                  <Chip
-                    label={`${(selectedAlert.fallConfidence * 100).toFixed(1)}%`}
-                    color={getConfidenceColor(selectedAlert.fallConfidence)}
-                    className="mb-2"
-                  />
+                  <Typography variant="subtitle2" className="text-gray-400">Location</Typography>
+                  <Typography variant="body2" className="text-white">{selected.location}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" className="font-semibold mb-1 text-gray-100">
-                    AI Analysis Details
-                  </Typography>
-                  <Typography variant="body2" className="text-gray-300 p-2 rounded bg-blue-900">
-                    {selectedAlert.aiExplanation}
-                  </Typography>
+                  <Typography variant="subtitle2" className="text-gray-400">Last upright</Typography>
+                  <Typography variant="body2" className="text-white">{selected.last_upright_position}</Typography>
                 </Box>
-                <Box className="bg-red-900 p-3 rounded-md">
-                  <Typography variant="subtitle2" className="font-semibold mb-2 text-gray-100">
-                    Emergency Contact
-                  </Typography>
-                  <Typography variant="body2" className="font-medium text-gray-100">
-                    {selectedAlert.emergencyContact.name}
-                  </Typography>
-                  <Typography variant="caption" className="text-gray-400">
-                    {selectedAlert.emergencyContact.relation}
-                  </Typography>
-                  <Typography variant="body2" className="font-mono text-red-400 font-semibold mt-1">
-                    {selectedAlert.emergencyContact.phone}
-                  </Typography>
+                <Box>
+                  <Typography variant="subtitle2" className="text-gray-400 mb-1">Triggered by</Typography>
+                  <Box className="flex flex-wrap gap-1">
+                    {selected.triggered_by.map((t, i) => (
+                      <Chip key={i} label={t} size="small" sx={{ backgroundColor: '#374151', color: '#d1d5db' }} />
+                    ))}
+                  </Box>
                 </Box>
+                {selected.sms_message && (
+                  <Box>
+                    <Typography variant="subtitle2" className="text-gray-400 mb-1">SMS sent to relative</Typography>
+                    <Typography variant="body2" className="text-gray-300 p-3 rounded bg-blue-900">
+                      {selected.sms_message}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </DialogContent>
-            <DialogActions className="border-t pt-4">
-              <Button onClick={handleCloseDetails}>Close</Button>
-              <Button variant="contained" color="error" startIcon={<PhoneIcon />}>
-                Call Emergency Contact
-              </Button>
+            <DialogActions>
+              <Button onClick={() => setSelected(null)}>Close</Button>
             </DialogActions>
           </>
         )}
