@@ -17,7 +17,7 @@ def on_fall_detected(data: dict, screenshot_path: str = None) -> FallIncident:
     print(f"\nGenerated SMS message:\n{incident.sms_message}")
 
     # 3. Skicka SMS
-    #send_sms(incident)
+    #send_sms(incident) ANVÄND ENDAST FÖR DEMO
     send_dummy_sms(incident.sms_message)
 
     return incident
