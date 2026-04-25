@@ -1,5 +1,9 @@
 .env
 *.onnx
+<<<<<<< HEAD
 *.pyc
 src/falls_data/*
 src/falls_images/*
+=======
+*.pyc
+>>>>>>> 4e8cac4df10392e7549899157381fc056cc7fd10

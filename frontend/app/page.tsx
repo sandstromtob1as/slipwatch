@@ -15,6 +15,13 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import {
+  Warning,
+  Dashboard,
+  ListAlt,
+  Settings,
+  CheckCircle,
+} from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
