@@ -19,6 +19,8 @@ class FallDetectionExplainer:
             rel_conf=0.05,
             box_conf=0.25
         )
+        self.last_alert_time = None
+        self.fall_resolved_time = None
 
     def analyze_frame(self, frame):
         frame_h, frame_w = frame.shape[:2]
@@ -27,7 +29,7 @@ class FallDetectionExplainer:
         boxes, rels, full_rels, _ = self.sgg_model.predict(frame, visualize=True)
         
         if not full_rels:
-            return "No relations detected.", None, frame.copy(), {}
+            return "No relations detected.", frame.copy(), {}
             
         person_keywords = ['person', 'man', 'woman', 'boy', 'girl', 'child', 'human', 'body', 'people', 'patient']
         important_classes = person_keywords + ['floor', 'carpet', 'rug', 'ground', 'couch', 'bed', 'chair', 'table', 'desk']
@@ -172,6 +174,8 @@ class FallDetectionExplainer:
         screenshot_taken = False
         fall_start_time = None
         last_fall_time = None
+        fall_active = False
+        alert_cooldown_seconds = 20
         leeway_seconds = 1.5  # Duration to keep progress if a frame is dropped
         
         img_dir = os.path.join(os.path.dirname(__file__), "falls_images")
@@ -211,52 +215,65 @@ class FallDetectionExplainer:
             display_img = annotated_img if annotated_img is not None else frame.copy()
             
             if decision == 'Yes':
-                last_fall_time = current_time
-                if fall_start_time is None:
-                    fall_start_time = current_time
-                elif not screenshot_taken and (current_time - fall_start_time) >= 3.0:
-                    timestamp = time.strftime("%Y%m%d")
-                    case_id = uuid.uuid4().hex[:8]
-                    filename = os.path.join(img_dir, f"fall_detected_{timestamp}_{case_id}.jpg")
-                    json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}_{case_id}.json")
-                    
-                    cv2.imwrite(filename, display_img) # Saves the annotated image
-                    
-                    leading_up_to_fall = []
-                    during_fall = []
-                    for e in event_history:
-                        desc = ", ".join(e['scene_description']) if isinstance(e['scene_description'], list) else e['scene_description']
-                        if not desc:
-                            continue
-                        time_offset = round(e['timestamp'] - fall_start_time, 2)
-                        event_record = {
-                            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e['timestamp'])),
-                            "relative_time": f"T{time_offset:+.2f}s",
-                            "activity": desc
-                        }
-                        if e['timestamp'] < fall_start_time:
-                            leading_up_to_fall.append(event_record)
-                        else:
-                            during_fall.append(event_record)
-                            
-                    fall_data = {
-                        "case_id": case_id,
-                        "timestamp": timestamp,
-                        "situation_description": {
-                            "leading_up_to_fall": leading_up_to_fall,
-                            "during_fall": during_fall
-                        },
-                        "scene_details_at_capture": details
-                    }
-                    with open(json_filename, 'w') as f:
-                        json.dump(fall_data, f, indent=4)
+                if not fall_active:
+                    if self.fall_resolved_time is not None and (current_time - self.fall_resolved_time) < alert_cooldown_seconds:
+                        print(f"*** New fall ignored until cooldown expires ({round(alert_cooldown_seconds - (current_time - self.fall_resolved_time), 1)}s left) ***")
+                    else:
+                        fall_active = True
+                        fall_start_time = current_time
+                        screenshot_taken = False
+
+                if fall_active:
+                    last_fall_time = current_time
+                    if not screenshot_taken and (current_time - fall_start_time) >= 3.0:
+                        timestamp = time.strftime("%Y%m%d")
+                        case_id = uuid.uuid4().hex[:8]
+                        filename = os.path.join(img_dir, f"fall_detected_{timestamp}_{case_id}.jpg")
+                        json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}_{case_id}.json")
                         
-                    print(f"*** ALERT: Fall detected for 1+ seconds! Saved {filename} & {json_filename} ***")
-                    if on_fall_callback:
-                        on_fall_callback(fall_data, filename)
-                    screenshot_taken = True
+                        cv2.imwrite(filename, display_img) # Saves the annotated image
+                        
+                        leading_up_to_fall = []
+                        during_fall = []
+                        for e in event_history:
+                            desc = ", ".join(e['scene_description']) if isinstance(e['scene_description'], list) else e['scene_description']
+                            if not desc:
+                                continue
+                            time_offset = round(e['timestamp'] - fall_start_time, 2)
+                            event_record = {
+                                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e['timestamp'])),
+                                "relative_time": f"T{time_offset:+.2f}s",
+                                "activity": desc
+                            }
+                            if e['timestamp'] < fall_start_time:
+                                leading_up_to_fall.append(event_record)
+                            else:
+                                during_fall.append(event_record)
+                                
+                        fall_data = {
+                            "case_id": case_id,
+                            "timestamp": timestamp,
+                            "situation_description": {
+                                "leading_up_to_fall": leading_up_to_fall,
+                                "during_fall": during_fall
+                            },
+                            "scene_details_at_capture": details
+                        }
+                        with open(json_filename, 'w') as f:
+                            json.dump(fall_data, f, indent=4)
+                            
+                        if self.last_alert_time is None or (current_time - self.last_alert_time) >= alert_cooldown_seconds:
+                            print(f"*** ALERT: Fall detected for 1+ seconds! Saved {filename} & {json_filename} ***")
+                            if on_fall_callback:
+                                on_fall_callback(fall_data, filename)
+                            self.last_alert_time = current_time
+                            screenshot_taken = True
+                        else:
+                            print(f"*** Fall detected but still in cooldown ({round(alert_cooldown_seconds - (current_time - self.last_alert_time), 1)}s left) ***")
             else:
-                if last_fall_time is not None and (current_time - last_fall_time) > leeway_seconds:
+                if fall_active and last_fall_time is not None and (current_time - last_fall_time) > leeway_seconds:
+                    fall_active = False
+                    self.fall_resolved_time = current_time
                     fall_start_time = None
                     last_fall_time = None
                     screenshot_taken = False
