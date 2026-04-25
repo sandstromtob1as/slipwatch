@@ -30,6 +30,10 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
         screenshot_path=screenshot_path
     )
 
+    # Debug
+    print(f"📸 Screenshot: {screenshot_path}")
+    print(f"📸 Finns filen: {os.path.exists(screenshot_path) if screenshot_path else 'Ingen bild'}")
+
     # 2. Generera SMS
     incident.sms_message = generate_sms(incident)
     print(f"\n📱 SMS:\n{incident.sms_message}")
@@ -47,7 +51,7 @@ if __name__ == "__main__":
     from fall_detector import FallDetectionExplainer
 
     onnx_model_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx')
+        os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'yolov8m', 'model.onnx')
     )
 
     if not os.path.exists(onnx_model_path):

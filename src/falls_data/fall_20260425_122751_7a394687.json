@@ -1,0 +1,114 @@
+{
+    "case_id": "7a394687",
+    "timestamp": "20260425_122751",
+    "trigger_relation": "lying on",
+    "trigger_duration_seconds": 3.5,
+    "situation_description": {
+        "leading_up_to_fall": [
+            {
+                "timestamp": "2026-04-25 12:27:41",
+                "relative_time": "T-6.32s",
+                "activity": "0_person - wearing - 1_shirt: (triplet_score=0.68, rel_score=0.50), 0_person - has - 5_head: (triplet_score=0.12, rel_score=0.01), 1_shirt - on - 0_person: (triplet_score=0.12, rel_score=0.00), 6_person - wearing - 1_shirt: (triplet_score=0.09, rel_score=0.04), 0_person - under - 2_ceiling: (triplet_score=0.07, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:42",
+                "relative_time": "T-5.82s",
+                "activity": "0_person - wearing - 1_shirt: (triplet_score=0.67, rel_score=0.46), 1_shirt - on - 0_person: (triplet_score=0.12, rel_score=0.00), 7_person - wearing - 1_shirt: (triplet_score=0.10, rel_score=0.08), 0_person - has - 5_head: (triplet_score=0.08, rel_score=0.00), 5_head - of - 0_person: (triplet_score=0.07, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:42",
+                "relative_time": "T-5.35s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.70, rel_score=0.48), 0_person - wearing - 6_eyeglasses: (triplet_score=0.19, rel_score=0.04), 2_shirt - on - 0_person: (triplet_score=0.12, rel_score=0.00), 4_head - of - 0_person: (triplet_score=0.11, rel_score=0.01), 0_person - wearing - 9_eyeglasses: (triplet_score=0.11, rel_score=0.03)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:43",
+                "relative_time": "T-4.87s",
+                "activity": "2_person - wearing - 0_shirt: (triplet_score=0.40, rel_score=0.10), 5_head - of - 2_person: (triplet_score=0.14, rel_score=0.01), 2_person - wearing - 4_eyeglasses: (triplet_score=0.14, rel_score=0.01), 2_person - wearing - 9_eyeglasses: (triplet_score=0.11, rel_score=0.05), 0_shirt - on - 2_person: (triplet_score=0.09, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:43",
+                "relative_time": "T-4.39s",
+                "activity": "2_person - lying on - floor: (inferred by bounding box)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:44",
+                "relative_time": "T-3.91s",
+                "activity": "0_person - wearing - 1_shirt: (triplet_score=0.70, rel_score=0.48), 1_shirt - on - 0_person: (triplet_score=0.11, rel_score=0.00), 10_person - wearing - 1_shirt: (triplet_score=0.08, rel_score=0.04), 8_head - of - 0_person: (triplet_score=0.07, rel_score=0.00), 0_person - sitting at - 6_table: (triplet_score=0.07, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:44",
+                "relative_time": "T-3.43s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.71, rel_score=0.51), 2_shirt - on - 0_person: (triplet_score=0.15, rel_score=0.00), 8_person - wearing - 2_shirt: (triplet_score=0.10, rel_score=0.06), 9_person - wearing - 2_shirt: (triplet_score=0.09, rel_score=0.07), 0_person - has - 6_head: (triplet_score=0.08, rel_score=0.01)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:45",
+                "relative_time": "T-2.93s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.66, rel_score=0.41), 2_shirt - on - 0_person: (triplet_score=0.12, rel_score=0.00), 0_person - sitting at - 9_table: (triplet_score=0.12, rel_score=0.25), 0_person - has - 7_head: (triplet_score=0.11, rel_score=0.02), 8_person - wearing - 2_shirt: (triplet_score=0.07, rel_score=0.02)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:45",
+                "relative_time": "T-2.46s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.52, rel_score=0.22), 2_shirt - on - 0_person: (triplet_score=0.10, rel_score=0.00), 9_person - wearing - 2_shirt: (triplet_score=0.09, rel_score=0.06), 0_person - reading - 8_book: (triplet_score=0.06, rel_score=0.01)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:46",
+                "relative_time": "T-1.98s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.78, rel_score=0.69), 0_person - wearing - 8_eyeglasses: (triplet_score=0.31, rel_score=0.22), 0_person - wearing - 10_eyeglasses: (triplet_score=0.30, rel_score=0.28), 2_shirt - on - 0_person: (triplet_score=0.28, rel_score=0.03), 0_person - has - 6_head: (triplet_score=0.19, rel_score=0.02)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:46",
+                "relative_time": "T-1.46s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.76, rel_score=0.63), 0_person - wearing - 9_eyeglasses: (triplet_score=0.37, rel_score=0.35), 0_person - has - 6_head: (triplet_score=0.29, rel_score=0.08), 2_shirt - on - 0_person: (triplet_score=0.26, rel_score=0.02), 0_person - wearing - 10_eyeglasses: (triplet_score=0.22, rel_score=0.26)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:47",
+                "relative_time": "T-0.97s",
+                "activity": "1_person - wearing - 2_shirt: (triplet_score=0.43, rel_score=0.12), 1_person - wearing - 10_eyeglasses: (triplet_score=0.15, rel_score=0.07), 1_person - wearing - 9_eyeglasses: (triplet_score=0.15, rel_score=0.05), 1_person - has - 6_head: (triplet_score=0.10, rel_score=0.00), 2_shirt - on - 1_person: (triplet_score=0.09, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:27:47",
+                "relative_time": "T-0.49s",
+                "activity": "0_person - wearing - 2_shirt: (triplet_score=0.41, rel_score=0.10), 12_person - wearing - 2_shirt: (triplet_score=0.08, rel_score=0.04), 0_person - wearing - 11_eyeglasses: (triplet_score=0.08, rel_score=0.03), 2_shirt - on - 0_person: (triplet_score=0.08, rel_score=0.00), 0_person - wearing - 10_eyeglasses: (triplet_score=0.07, rel_score=0.02)"
+            }
+        ],
+        "during_fall": [
+            {
+                "timestamp": "2026-04-25 12:27:48",
+                "relative_time": "T+0.00s",
+                "activity": "2_person - lying on - floor: (inferred by bounding box)"
+            }
+        ]
+    },
+    "scene_details_at_capture": {
+        "full_relations": [
+            "2_person - wearing - 0_shirt: (triplet_score=0.37, rel_score=0.07)",
+            "6_light - on - 1_ceiling: (triplet_score=0.09, rel_score=0.00)",
+            "0_shirt - on - 2_person: (triplet_score=0.08, rel_score=0.00)",
+            "2_person - wearing - 8_eyeglasses: (triplet_score=0.08, rel_score=0.01)",
+            "5_head - of - 2_person: (triplet_score=0.07, rel_score=0.00)",
+            "7_light - on - 1_ceiling: (triplet_score=0.06, rel_score=0.00)",
+            "2_person - under - 1_ceiling: (triplet_score=0.05, rel_score=0.00)",
+            "2_person - has - 5_head: (triplet_score=0.05, rel_score=0.00)"
+        ],
+        "filtered_relations": [
+            "2_person - lying on - floor: (inferred by bounding box)"
+        ],
+        "trigger_reason": "Bounding Box Fallback",
+        "trigger_relation": "lying on",
+        "person_boxes": [
+            {
+                "class": "person",
+                "confidence": 0.7967975735664368,
+                "bbox": [
+                    350.39105224609375,
+                    331.1363525390625,
+                    989.8887329101562,
+                    716.0152587890625
+                ],
+                "width": 639.4976806640625,
+                "height": 384.87890625,
+                "aspect_ratio": 1.661555528640747
+            }
+        ]
+    }
+}
