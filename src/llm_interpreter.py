@@ -14,14 +14,11 @@ with open(json_path, "r") as f:
     data = json.load(f)
 
 # Convert to log string
+triggered = ", ".join(data['triggered_by'])
 log_string = (
     f"{data['timestamp']} | "
-    f"{data['person_position']} | "
-    f"{data['movement']} | "
-    f"{data['stationary_duration']} | "
-    f"sudden position change: {data['sudden_position_change']} | "
     f"{data['location']} | "
-    f"{data['nearby_surface']} | "
+    f"triggered by: {triggered} | "
     f"last upright {data['last_upright_position']}"
 )
 
