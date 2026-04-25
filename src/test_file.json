@@ -1,9 +1,10 @@
 {
-    "timestamp": "12:03:45",
+    "timestamp": "14:32:10",
     "person_position": "person lying on floor",
-    "nearby_surface": "hard surface",
     "movement": "no movement detected",
-    "stationary_duration": "90 seconds",
+    "stationary_duration": "95 seconds",
     "sudden_position_change": "yes",
-    "location": "kitchen"
+    "location": "bathroom",
+    "nearby_surface": "hard tile floor",
+    "last_upright_position": "14:30:15"
 }

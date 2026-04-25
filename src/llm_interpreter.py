@@ -1,9 +1,29 @@
 import os
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
+
+# Read from JSON
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+json_path = os.path.join(BASE_DIR, "test_file.json")
+
+with open(json_path, "r") as f:
+    data = json.load(f)
+
+# Convert to log string
+log_string = (
+    f"{data['timestamp']} | "
+    f"{data['person_position']} | "
+    f"{data['movement']} | "
+    f"{data['stationary_duration']} | "
+    f"sudden position change: {data['sudden_position_change']} | "
+    f"{data['location']} | "
+    f"{data['nearby_surface']} | "
+    f"last upright {data['last_upright_position']}"
+)
 
 # Get API key
 api_key = os.getenv("OPENAI_API_KEY")
@@ -16,14 +36,17 @@ response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[
         {
-    "role": "system",
-    "content": "You are a safety assistant for a senior monitoring system. "
-               "When given a sensor log, write a calm and clear 2-3 sentence "
-               "SMS message to a relative explaining what happened. "
-               "Be reassuring but honest. Do not be alarmist or dramatic. "
-               "Always mention the time and location of the incident."
-},
-        {"role": "user", "content": "12:03:45 | person lying on floor | no movement | 90 seconds | sudden position change | kitchen | hard floor tiles | last upright 12:01:55"}
+            "role": "system",
+            "content": "You are a safety assistant for a senior monitoring system. "
+                       "When given a sensor log, write a calm and clear 2-3 sentence "
+                       "SMS message to a relative explaining what happened. "
+                       "Be reassuring but honest. Do not be alarmist or dramatic. "
+                       "Always mention the time and location of the incident."
+        },
+        {
+            "role": "user",
+            "content": log_string
+        }
     ]
 )
 
