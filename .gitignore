@@ -3,3 +3,4 @@
 *.pyc
 src/falls_data/*
 src/falls_images/*
+.DS_Store
