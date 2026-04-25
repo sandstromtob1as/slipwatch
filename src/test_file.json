@@ -1,9 +1,11 @@
 {
-    "timestamp": "12:03:45",
-    "person_position": "person lying on floor",
-    "nearby_surface": "hard surface",
-    "movement": "no movement detected",
-    "stationary_duration": "90 seconds",
-    "sudden_position_change": "yes",
-    "location": "kitchen"
+    "timestamp": "14:32:10",
+    "location": "bathroom",
+    "triggered_by": [
+        "person lying on floor",
+        "no movement 95 seconds",
+        "sudden position change",
+        "hard tile floor nearby"
+    ],
+    "last_upright_position": "14:30:15"
 }
