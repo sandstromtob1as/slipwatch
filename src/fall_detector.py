@@ -140,4 +140,151 @@ class FallDetectionExplainer:
             "trigger_reason": trigger_reason,
             "person_boxes": []
         }
-        for i, box in enum
+        for i, box in enumerate(boxes):
+            if i in ignored_person_indices:
+                continue
+            cls_name = self.sgg_model.obj_classes.get(int(box[4]), '?')
+            if any(p in cls_name for p in person_keywords):
+                x1, y1, x2, y2, cls_id, score = box
+                width, height = x2 - x1, y2 - y1
+                details["person_boxes"].append({
+                    "class": cls_name,
+                    "confidence": float(score),
+                    "bbox": [float(x1), float(y1), float(x2), float(y2)],
+                    "width": float(width),
+                    "height": float(height),
+                    "aspect_ratio": float(width / height) if height > 0 else 0.0
+                })
+
+        return output, vis_image, details
+
+    def run_webcam(self, camera_index=0, on_fall_callback=None):
+        """
+        Runs the fall detection continuously on a webcam feed.
+        """
+        cap = cv2.VideoCapture(camera_index)
+        if not cap.isOpened():
+            print(f"Error: Could not open webcam {camera_index}.")
+            return
+
+        print("Starting webcam feed. Press 'q' to exit.")
+        
+        screenshot_taken = False
+        fall_start_time = None
+        last_fall_time = None
+        leeway_seconds = 1.5  # Duration to keep progress if a frame is dropped
+        
+        img_dir = os.path.join(os.path.dirname(__file__), "falls_images")
+        json_dir = os.path.join(os.path.dirname(__file__), "falls_data")
+        os.makedirs(img_dir, exist_ok=True)
+        os.makedirs(json_dir, exist_ok=True)
+        
+        event_history = []
+        
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Error: Could not read frame from webcam.")
+                break
+
+            try:
+                decision, annotated_img, details = self.analyze_frame(frame)
+            except UnboundLocalError:
+                decision, annotated_img, details = "No", frame.copy(), {}
+            
+            current_time = time.time()
+            
+            event_history = [e for e in event_history if current_time - e['timestamp'] <= 10.0]
+            
+            relations = details.get('filtered_relations')
+            if not relations:
+                person_rels = [r for r in details.get('full_relations', []) if 'person' in r.lower()]
+                relations = person_rels[:5]
+                
+            if relations:
+                if not event_history or event_history[-1]['scene_description'] != relations:
+                    event_history.append({
+                        "timestamp": current_time,
+                        "scene_description": relations
+                    })
+
+            display_img = annotated_img if annotated_img is not None else frame.copy()
+            
+            if decision == 'Yes':
+                last_fall_time = current_time
+                if fall_start_time is None:
+                    fall_start_time = current_time
+                elif not screenshot_taken and (current_time - fall_start_time) >= 3.0:
+                    timestamp = time.strftime("%Y%m%d")
+                    case_id = uuid.uuid4().hex[:8]
+                    filename = os.path.join(img_dir, f"fall_detected_{timestamp}_{case_id}.jpg")
+                    json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}_{case_id}.json")
+                    
+                    cv2.imwrite(filename, display_img) # Saves the annotated image
+                    
+                    leading_up_to_fall = []
+                    during_fall = []
+                    for e in event_history:
+                        desc = ", ".join(e['scene_description']) if isinstance(e['scene_description'], list) else e['scene_description']
+                        if not desc:
+                            continue
+                        time_offset = round(e['timestamp'] - fall_start_time, 2)
+                        event_record = {
+                            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e['timestamp'])),
+                            "relative_time": f"T{time_offset:+.2f}s",
+                            "activity": desc
+                        }
+                        if e['timestamp'] < fall_start_time:
+                            leading_up_to_fall.append(event_record)
+                        else:
+                            during_fall.append(event_record)
+                            
+                    fall_data = {
+                        "case_id": case_id,
+                        "timestamp": timestamp,
+                        "situation_description": {
+                            "leading_up_to_fall": leading_up_to_fall,
+                            "during_fall": during_fall
+                        },
+                        "scene_details_at_capture": details
+                    }
+                    with open(json_filename, 'w') as f:
+                        json.dump(fall_data, f, indent=4)
+                        
+                    print(f"*** ALERT: Fall detected for 1+ seconds! Saved {filename} & {json_filename} ***")
+                    if on_fall_callback:
+                        on_fall_callback(fall_data, filename)
+                    screenshot_taken = True
+            else:
+                if last_fall_time is not None and (current_time - last_fall_time) > leeway_seconds:
+                    fall_start_time = None
+                    last_fall_time = None
+                    screenshot_taken = False
+
+            display_decision = decision
+            if decision == 'No' and last_fall_time is not None and (current_time - last_fall_time) <= leeway_seconds:
+                display_decision = 'Yes'
+
+            color = (0, 0, 255) if display_decision == 'Yes' else (0, 255, 0)
+            cv2.putText(display_img, f"Fall Detected: {display_decision}", (20, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+            
+            cv2.imshow('Fall Detection (Press q to quit)', display_img)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Example Usage
+    # Make sure to download the IndoorVG model first as it contains 'person', 'floor', and 'laying on'
+    onnx_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx'))
+    
+    if not os.path.exists(onnx_model_path):
+        print(f"Please download the model first to {onnx_model_path}")
+        sys.exit(1)
+        
+    detector = FallDetectionExplainer(onnx_path=onnx_model_path)
+    detector.run_webcam()
