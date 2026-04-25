@@ -15,17 +15,17 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import {
-  Warning,
-  Dashboard,
-  ListAlt,
-  Settings,
-  CheckCircle,
-} from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+
+interface ShapResult {
+  incident_id: number;
+  verdict: string;
+  attribution: Record<string, number>;
+  features: Record<string, string>;
+}
 
 interface Incident {
   id: number;
@@ -35,6 +35,8 @@ interface Incident {
   last_upright_position: string;
   image_url: string | null;
   sms_message: string | null;
+  shap_ready: boolean;
+  shap?: ShapResult;
 }
 
 const API_URL = 'http://localhost:8000';
@@ -53,6 +55,12 @@ export default function Home() {
         setIncidents(data);
         setApiOnline(true);
         setLastUpdated(new Date());
+
+        // Update selected incident if open and shap just became ready
+        if (selected) {
+          const updated = data.find((i: Incident) => i.id === selected.id);
+          if (updated) setSelected(updated);
+        }
       } catch {
         setApiOnline(false);
       }
@@ -61,7 +69,7 @@ export default function Home() {
     fetchIncidents();
     const interval = setInterval(fetchIncidents, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selected?.id]);
 
   return (
     <div className="min-h-screen py-8">
@@ -180,6 +188,7 @@ export default function Home() {
         )}
       </Container>
 
+      {/* Details Dialog */}
       <Dialog
         open={!!selected}
         onClose={() => setSelected(null)}
@@ -199,9 +208,13 @@ export default function Home() {
             </DialogTitle>
             <DialogContent className="pt-4">
               <Box className="flex flex-col gap-4 mt-2">
+
+                {/* Image */}
                 {selected.image_url && (
                   <img src={selected.image_url} alt="Fall" className="w-full rounded-lg" />
                 )}
+
+                {/* Basic info */}
                 <Box>
                   <Typography variant="subtitle2" className="text-gray-400">Time</Typography>
                   <Typography variant="body2" className="text-white">{selected.timestamp}</Typography>
@@ -214,6 +227,8 @@ export default function Home() {
                   <Typography variant="subtitle2" className="text-gray-400">Last upright</Typography>
                   <Typography variant="body2" className="text-white">{selected.last_upright_position}</Typography>
                 </Box>
+
+                {/* Triggered by */}
                 <Box>
                   <Typography variant="subtitle2" className="text-gray-400 mb-1">Triggered by</Typography>
                   <Box className="flex flex-wrap gap-1">
@@ -222,6 +237,8 @@ export default function Home() {
                     ))}
                   </Box>
                 </Box>
+
+                {/* SMS */}
                 {selected.sms_message && (
                   <Box>
                     <Typography variant="subtitle2" className="text-gray-400 mb-1">SMS sent to relative</Typography>
@@ -230,6 +247,58 @@ export default function Home() {
                     </Typography>
                   </Box>
                 )}
+
+                {/* ── llmSHAP XAI Block ── */}
+                <Box>
+                  <Typography variant="subtitle2" className="text-gray-400 mb-2">
+                    Why AI flagged this as a fall
+                  </Typography>
+
+                  {selected.shap_ready && selected.shap ? (
+                    <Box className="p-3 rounded bg-gray-900">
+                      {/* Verdict */}
+                      <Typography variant="caption" className="block mb-3 text-blue-300 font-medium">
+                        {selected.shap.verdict}
+                      </Typography>
+
+                      {/* Attribution bars */}
+                      {Object.entries(selected.shap.attribution)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([feature, score]) => (
+                          <Box key={feature} className="mb-3">
+                            <Box className="flex justify-between mb-1">
+                              <Typography variant="caption" className="text-gray-300 capitalize">
+                                {feature}
+                              </Typography>
+                              <Typography variant="caption" className="text-gray-400 font-mono">
+                                {(score * 100).toFixed(0)}%
+                              </Typography>
+                            </Box>
+                            <Box className="w-full bg-gray-700 rounded-full h-2">
+                              <Box
+                                className="rounded-full h-2 transition-all duration-500"
+                                sx={{
+                                  width: `${Math.min(Math.abs(score) * 100, 100)}%`,
+                                  backgroundColor:
+                                    score > 0.3 ? '#ef4444' :
+                                    score > 0.1 ? '#f97316' : '#3b82f6',
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                        ))}
+                    </Box>
+                  ) : (
+                    <Box className="p-3 rounded bg-gray-900">
+                      <Typography variant="caption" className="text-gray-500 italic">
+                        {selected.shap_ready === false
+                          ? '⏳ AI is analyzing... check back in ~60 seconds'
+                          : 'Analysis not available'}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+
               </Box>
             </DialogContent>
             <DialogActions>

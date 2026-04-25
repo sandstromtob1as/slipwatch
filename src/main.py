@@ -8,9 +8,26 @@ from dotenv import load_dotenv
 from models import FallIncident
 from llm_interpreter import generate_sms
 from sms_sender import send_sms, send_dummy_sms
-from server import app, add_incident
+from server import app, add_incident, add_shap_result
+from shap_interpreter import run_shap_async
 
 load_dotenv()
+
+# Relations that are not relevant for fall detection
+IRRELEVANT_RELATIONS = ['wearing', 'holding', 'carrying', 'looking at', 'using', 'reading']
+
+
+def clean_triggered_by(raw: list[str]) -> list[str]:
+    """
+    Filters and deduplicates triggered_by features.
+    Removes irrelevant relations and duplicates.
+    """
+    filtered = [
+        t for t in raw
+        if not any(irr in t.lower() for irr in IRRELEVANT_RELATIONS)
+    ]
+    # Deduplicate while preserving order
+    return list(dict.fromkeys(filtered))[:4]
 
 
 def post_to_dashboard(incident: FallIncident):
@@ -30,13 +47,16 @@ def post_to_dashboard(incident: FallIncident):
 def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncident:
 
     # Bygg triggered_by från event history
-    triggered_by = []
+    raw_triggered = []
     for event in fall_data["situation_description"]["during_fall"]:
         activity = event["activity"]
         if isinstance(activity, list):
-            triggered_by.extend(activity)
+            raw_triggered.extend(activity)
         else:
-            triggered_by.append(activity)
+            raw_triggered.append(activity)
+
+    # Filtrera och deduplicera
+    triggered_by = clean_triggered_by(raw_triggered)
 
     # Hämta senaste kända position innan fallet
     leading_up = fall_data["situation_description"].get("leading_up_to_fall", [])
@@ -46,7 +66,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     incident = FallIncident(
         timestamp=time.strftime("%H:%M:%S"),
         location=os.getenv("CAMERA_LOCATION", "unknown"),
-        triggered_by=triggered_by[:4],
+        triggered_by=triggered_by,
         last_upright_position=last_upright,
         screenshot_path=screenshot_path
     )
@@ -61,6 +81,14 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
 
     # 4. Skicka till dashboard
     post_to_dashboard(incident)
+
+    # 5. Kör llmSHAP i bakgrunden
+    # llmSHAP analyserar vilka features som bidrog mest till fallbeslutet
+    # Resultatet visas i React-dashboarden under "Why AI flagged this"
+    run_shap_async(
+        incident,
+        on_complete=lambda result: add_shap_result(incident.id, result)
+    )
 
     print(f"\n✅ Incident skapad med ID: {incident.id}")
     return incident

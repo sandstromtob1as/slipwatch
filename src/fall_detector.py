@@ -13,12 +13,12 @@ from standalone_onnx_demo import SGG_ONNX_Standalone
 
 # How long a relation must persist before triggering an alert (seconds)
 RELATION_THRESHOLDS = {
-    'falling off':  8.0,   # Almost always dangerous
-    'lying on':     8.0,   # Could be yoga, but unlikely for elderly
-    'laying on':    8.0,
-    'on':           8.0,   # Ambiguous, require more time
-    'sitting on':  8.0,   # Give more time before alerting
-    'touching':    8.0,
+    'falling off':  2.0,   # Almost always dangerous
+    'lying on':     2.0,   # Could be yoga, but unlikely for elderly
+    'laying on':    2.0,
+    'on':           2.0,   # Ambiguous, require more time
+    'sitting on':  2.0,   # Give more time before alerting
+    'touching':    2.0,
 }
 
 ALERT_COOLDOWN = 60.0      # Seconds between alerts
@@ -43,13 +43,8 @@ class FallDetectionExplainer:
         boxes, rels, full_rels, _ = self.sgg_model.predict(frame, visualize=True)
 
         if not full_rels:
-<<<<<<< HEAD
             return "No", None, None, {}
 
-=======
-            return "No relations detected.", frame.copy(), {}
-            
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
         person_keywords = ['person', 'man', 'woman', 'boy', 'girl', 'child', 'human', 'body', 'people', 'patient']
         important_classes = person_keywords + ['floor', 'carpet', 'rug', 'ground', 'couch', 'bed', 'chair', 'table', 'desk']
         surface_keywords = ['floor', 'ground', 'carpet', 'rug', 'mat', 'tile', 'wood']
@@ -209,54 +204,28 @@ class FallDetectionExplainer:
                     "aspect_ratio": float(width / height) if height > 0 else 0.0
                 })
 
-<<<<<<< HEAD
         return output, vis_image, trigger_relation, details
 
     def run_webcam(self, camera_index=0, on_fall_callback=None):
-=======
-        return output, vis_image, details
-
-    def run_webcam(self, camera_index=0, on_fall_callback=None):
-        """
-        Runs the fall detection continuously on a webcam feed.
-        """
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
         cap = cv2.VideoCapture(camera_index)
         if not cap.isOpened():
             print(f"Error: Could not open webcam {camera_index}.")
             return
 
         print("Starting webcam feed. Press 'q' to exit.")
-<<<<<<< HEAD
 
         relation_start_times = {}   # relation -> time when it started
         last_fall_time = None       # time of last confirmed fall frame
         last_alert_time = None      # time of last alert sent
         alert_sent = False          # has alert been sent for this fall session
 
-=======
-        
-        screenshot_taken = False
-        fall_start_time = None
-        last_fall_time = None
-        fall_active = False
-        alert_cooldown_seconds = 20
-        leeway_seconds = 1.5  # Duration to keep progress if a frame is dropped
-        
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
         img_dir = os.path.join(os.path.dirname(__file__), "falls_images")
         json_dir = os.path.join(os.path.dirname(__file__), "falls_data")
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(json_dir, exist_ok=True)
-<<<<<<< HEAD
 
         event_history = []
 
-=======
-        
-        event_history = []
-        
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -264,7 +233,6 @@ class FallDetectionExplainer:
                 break
 
             try:
-<<<<<<< HEAD
                 decision, annotated_img, trigger_relation, details = self.analyze_frame(frame)
             except Exception as e:
                 print(f"Frame error: {e}")
@@ -275,25 +243,10 @@ class FallDetectionExplainer:
             # --- Update event history (rolling 10s window) ---
             event_history = [e for e in event_history if current_time - e['timestamp'] <= 10.0]
 
-=======
-                decision, annotated_img, details = self.analyze_frame(frame)
-            except UnboundLocalError:
-                decision, annotated_img, details = "No", frame.copy(), {}
-            
-            current_time = time.time()
-            
-            event_history = [e for e in event_history if current_time - e['timestamp'] <= 10.0]
-            
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
             relations = details.get('filtered_relations')
             if not relations:
                 person_rels = [r for r in details.get('full_relations', []) if 'person' in r.lower()]
                 relations = person_rels[:5]
-<<<<<<< HEAD
-
-=======
-                
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
             if relations:
                 if not event_history or event_history[-1]['scene_description'] != relations:
                     event_history.append({
@@ -302,7 +255,6 @@ class FallDetectionExplainer:
                     })
 
             display_img = annotated_img if annotated_img is not None else frame.copy()
-<<<<<<< HEAD
 
             if decision == 'Yes' and trigger_relation:
                 last_fall_time = current_time
@@ -403,82 +355,6 @@ class FallDetectionExplainer:
                 y_offset += 30
 
             cv2.imshow('SlipWatch (Press q to quit)', display_img)
-=======
-            
-            if decision == 'Yes':
-                if not fall_active:
-                    if self.fall_resolved_time is not None and (current_time - self.fall_resolved_time) < alert_cooldown_seconds:
-                        print(f"*** New fall ignored until cooldown expires ({round(alert_cooldown_seconds - (current_time - self.fall_resolved_time), 1)}s left) ***")
-                    else:
-                        fall_active = True
-                        fall_start_time = current_time
-                        screenshot_taken = False
-
-                if fall_active:
-                    last_fall_time = current_time
-                    if not screenshot_taken and (current_time - fall_start_time) >= 3.0:
-                        timestamp = time.strftime("%Y%m%d")
-                        case_id = uuid.uuid4().hex[:8]
-                        filename = os.path.join(img_dir, f"fall_detected_{timestamp}_{case_id}.jpg")
-                        json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}_{case_id}.json")
-                        
-                        cv2.imwrite(filename, display_img) # Saves the annotated image
-                        
-                        leading_up_to_fall = []
-                        during_fall = []
-                        for e in event_history:
-                            desc = ", ".join(e['scene_description']) if isinstance(e['scene_description'], list) else e['scene_description']
-                            if not desc:
-                                continue
-                            time_offset = round(e['timestamp'] - fall_start_time, 2)
-                            event_record = {
-                                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e['timestamp'])),
-                                "relative_time": f"T{time_offset:+.2f}s",
-                                "activity": desc
-                            }
-                            if e['timestamp'] < fall_start_time:
-                                leading_up_to_fall.append(event_record)
-                            else:
-                                during_fall.append(event_record)
-                                
-                        fall_data = {
-                            "case_id": case_id,
-                            "timestamp": timestamp,
-                            "situation_description": {
-                                "leading_up_to_fall": leading_up_to_fall,
-                                "during_fall": during_fall
-                            },
-                            "scene_details_at_capture": details
-                        }
-                        with open(json_filename, 'w') as f:
-                            json.dump(fall_data, f, indent=4)
-                            
-                        if self.last_alert_time is None or (current_time - self.last_alert_time) >= alert_cooldown_seconds:
-                            print(f"*** ALERT: Fall detected for 1+ seconds! Saved {filename} & {json_filename} ***")
-                            if on_fall_callback:
-                                on_fall_callback(fall_data, filename)
-                            self.last_alert_time = current_time
-                            screenshot_taken = True
-                        else:
-                            print(f"*** Fall detected but still in cooldown ({round(alert_cooldown_seconds - (current_time - self.last_alert_time), 1)}s left) ***")
-            else:
-                if fall_active and last_fall_time is not None and (current_time - last_fall_time) > leeway_seconds:
-                    fall_active = False
-                    self.fall_resolved_time = current_time
-                    fall_start_time = None
-                    last_fall_time = None
-                    screenshot_taken = False
-
-            display_decision = decision
-            if decision == 'No' and last_fall_time is not None and (current_time - last_fall_time) <= leeway_seconds:
-                display_decision = 'Yes'
-
-            color = (0, 0, 255) if display_decision == 'Yes' else (0, 255, 0)
-            cv2.putText(display_img, f"Fall Detected: {display_decision}", (20, 40), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-            
-            cv2.imshow('Fall Detection (Press q to quit)', display_img)
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -486,7 +362,6 @@ class FallDetectionExplainer:
         cap.release()
         cv2.destroyAllWindows()
 
-<<<<<<< HEAD
 
 if __name__ == "__main__":
     onnx_model_path = os.path.abspath(
@@ -499,16 +374,3 @@ if __name__ == "__main__":
 
     detector = FallDetectionExplainer(onnx_path=onnx_model_path)
     detector.run_webcam()
-=======
-if __name__ == "__main__":
-    # Example Usage
-    # Make sure to download the IndoorVG model first as it contains 'person', 'floor', and 'laying on'
-    onnx_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx'))
-    
-    if not os.path.exists(onnx_model_path):
-        print(f"Please download the model first to {onnx_model_path}")
-        sys.exit(1)
-        
-    detector = FallDetectionExplainer(onnx_path=onnx_model_path)
-    detector.run_webcam()
->>>>>>> 5d1e59f4a1743db658d45ad8c617db80cf81aed4
