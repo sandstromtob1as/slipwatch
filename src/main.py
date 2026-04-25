@@ -1,34 +1,13 @@
+import json
 import time
 import os
 import sys
-import threading
-import uvicorn
-from dotenv import load_dotenv
-
 from models import FallIncident
 from llm_interpreter import generate_sms
 from sms_sender import send_sms, send_dummy_sms
-from server import app, add_incident
-
-load_dotenv()
-
-
-def post_to_dashboard(incident: FallIncident):
-    """Adds incident directly to in-memory store via server module."""
-    add_incident({
-        "id": incident.id,
-        "timestamp": incident.timestamp,
-        "location": incident.location,
-        "triggered_by": incident.triggered_by,
-        "last_upright_position": incident.last_upright_position,
-        "screenshot_path": incident.screenshot_path,
-        "sms_message": incident.sms_message,
-    })
-    print("✅ Incident tillagd i dashboard")
-
 
 def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncident:
-
+    
     # Bygg triggered_by från event history
     triggered_by = []
     for event in fall_data["situation_description"]["during_fall"]:
@@ -45,7 +24,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     # 1. Skapa incident
     incident = FallIncident(
         timestamp=time.strftime("%H:%M:%S"),
-        location=os.getenv("CAMERA_LOCATION", "unknown"),
+        location="unknown",
         triggered_by=triggered_by[:4],
         last_upright_position=last_upright,
         screenshot_path=screenshot_path
@@ -56,39 +35,44 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     print(f"\n📱 SMS:\n{incident.sms_message}")
 
     # 3. Skicka SMS
-    # send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
-    send_dummy_sms(incident.sms_message)  # Dummy för utveckling
-
-    # 4. Skicka till dashboard
-    post_to_dashboard(incident)
+    #send_sms(incident.sms_message) #ANVÄND ENDAST FÖR DEMO!!
+    send_dummy_sms(incident.sms_message) #Dummy sms för utveckling
 
     print(f"\n✅ Incident skapad med ID: {incident.id}")
     return incident
 
 
+# Test med JSON-fil
 if __name__ == "__main__":
-    sys.path.append(os.path.dirname(__file__))
-    from fall_detector import FallDetectionExplainer
+    # Om du vill testa med en riktig JSON från detector.py:
+    # .venv/bin/python src/main.py src/falls_data/fall_detected_XXXX.json
 
-    onnx_model_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'yolov8m', 'model.onnx')
-    )
+    if len(sys.argv) > 1:
+        json_path = sys.argv[1]
+        with open(json_path, "r") as f:
+            fall_data = json.load(f)
+        on_fall_detected(fall_data)
 
-    if not os.path.exists(onnx_model_path):
-        print(f"❌ ONNX-modellen saknas: {onnx_model_path}")
-        sys.exit(1)
-
-    # Starta FastAPI i bakgrunden
-    server_thread = threading.Thread(
-        target=uvicorn.run,
-        args=(app,),
-        kwargs={"host": "0.0.0.0", "port": 8000, "log_level": "warning"},
-        daemon=True
-    )
-    server_thread.start()
-    print("✅ Dashboard API körs på http://localhost:8000")
-
-    # Starta detektor
-    print("🚀 Startar SlipWatch...")
-    detector = FallDetectionExplainer(onnx_path=onnx_model_path)
-    detector.run_webcam(on_fall_callback=on_fall_detected)
+    else:
+        # Fallback testdata
+        fall_data = {
+            "situation_description": {
+                "leading_up_to_fall": [
+                    {
+                        "timestamp": "2025-01-01 14:30:15",
+                        "activity": "person standing near kitchen counter"
+                    }
+                ],
+                "during_fall": [
+                    {
+                        "timestamp": "2025-01-01 14:32:10",
+                        "activity": "person lying on floor"
+                    },
+                    {
+                        "timestamp": "2025-01-01 14:32:15",
+                        "activity": "no movement detected"
+                    }
+                ]
+            }
+        }
+        on_fall_detected(fall_data, screenshot_path=None)
