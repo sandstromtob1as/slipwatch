@@ -1,0 +1,126 @@
+{
+    "case_id": "1e3fac75",
+    "timestamp": "20260425_123203",
+    "trigger_relation": "sitting on",
+    "trigger_duration_seconds": 10.0,
+    "situation_description": {
+        "leading_up_to_fall": [],
+        "during_fall": [
+            {
+                "timestamp": "2026-04-25 12:31:53",
+                "relative_time": "T+0.46s",
+                "activity": "0_person - sitting on - 1_floor: (triplet_score=0.13, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:54",
+                "relative_time": "T+0.94s",
+                "activity": "0_person - sitting on - 1_floor: (triplet_score=0.10, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:54",
+                "relative_time": "T+1.42s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.07, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:54",
+                "relative_time": "T+1.90s",
+                "activity": "1_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:55",
+                "relative_time": "T+2.35s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:55",
+                "relative_time": "T+2.83s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.09, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:56",
+                "relative_time": "T+3.32s",
+                "activity": "2_person - sitting on - 0_floor: (triplet_score=0.09, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:56",
+                "relative_time": "T+3.80s",
+                "activity": "1_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:57",
+                "relative_time": "T+4.27s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:58",
+                "relative_time": "T+5.21s",
+                "activity": "4_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:59",
+                "relative_time": "T+6.20s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:31:59",
+                "relative_time": "T+6.66s",
+                "activity": "9_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.01)"
+            },
+            {
+                "timestamp": "2026-04-25 12:32:00",
+                "relative_time": "T+7.14s",
+                "activity": "4_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:32:01",
+                "relative_time": "T+8.13s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:32:02",
+                "relative_time": "T+9.07s",
+                "activity": "4_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:32:02",
+                "relative_time": "T+9.55s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.08, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:32:03",
+                "relative_time": "T+10.04s",
+                "activity": "4_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)"
+            }
+        ]
+    },
+    "scene_details_at_capture": {
+        "full_relations": [
+            "10_towel - on - 0_floor: (triplet_score=0.07, rel_score=0.00)",
+            "9_light - attached to - 1_wall: (triplet_score=0.07, rel_score=0.00)",
+            "8_stand - on - 0_floor: (triplet_score=0.07, rel_score=0.00)",
+            "11_lamp - attached to - 1_wall: (triplet_score=0.06, rel_score=0.02)",
+            "4_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)",
+            "9_light - hanging from - 2_ceiling: (triplet_score=0.05, rel_score=0.00)"
+        ],
+        "filtered_relations": [
+            "4_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)"
+        ],
+        "trigger_reason": "SGG Relation",
+        "trigger_relation": "sitting on",
+        "person_boxes": [
+            {
+                "class": "person",
+                "confidence": 0.4053043723106384,
+                "bbox": [
+                    249.0093994140625,
+                    470.96142578125,
+                    793.939208984375,
+                    584.923583984375
+                ],
+                "width": 544.9298095703125,
+                "height": 113.962158203125,
+                "aspect_ratio": 4.781673431396484
+            }
+        ]
+    }
+}

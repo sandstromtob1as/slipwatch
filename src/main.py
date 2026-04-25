@@ -35,7 +35,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     print(f"\n📱 SMS:\n{incident.sms_message}")
 
     # 3. Skicka SMS
-    # send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
+    #send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
     send_dummy_sms(incident.sms_message)  # Dummy för utveckling
 
     print(f"\n✅ Incident skapad med ID: {incident.id}")
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     from fall_detector import FallDetectionExplainer
 
     onnx_model_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx')
-    )
+    os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'yolov8m', 'model.onnx')
+    )   
 
     if not os.path.exists(onnx_model_path):
         print(f"❌ ONNX-modellen saknas: {onnx_model_path}")
