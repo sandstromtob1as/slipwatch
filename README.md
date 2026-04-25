@@ -15,10 +15,14 @@ cd frontend && npm run dev
 .venv/bin/python src/main.py
 
 # .env file
-OPENAI_API_KEY=<key> 
+Requires following content in an .env file:
 
-ELKS_USERNAME=<username>
-ELKS_PASSWORD=<password>
-RECIPIENT_PHONE_NUMBER=<number>
+OPENAI_API_KEY=your_openai_api_key
 
-CAMERA_LOCATION=<location>
+ELKS_USERNAME=your_46elks_username
+
+ELKS_PASSWORD=your_46elks_password
+
+RECIPIENT_PHONE_NUMBER=+46xxxxxxxxx
+
+CAMERA_LOCATION=Living Room
