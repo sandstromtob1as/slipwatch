@@ -224,7 +224,7 @@ export default function Home() {
           <Card sx={{ backgroundColor: '#1f2937' }} className="p-12 text-center border border-gray-700">
             <CheckCircleIcon sx={{ fontSize: 48, color: '#4ade80', marginBottom: 2 }} />
             <Typography variant="h6" className="text-gray-300">
-              No falls detected — system is monitoring
+              No falls detected. All clear!
             </Typography>
           </Card>
         )}

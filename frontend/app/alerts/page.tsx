@@ -45,6 +45,17 @@ export default function AlertLogPage() {
             <HistoryIcon className="text-blue-400" fontSize="large" />
             Alert Log History
           </Typography>
+
+		  <Button
+			variant="contained"
+			color="error"
+			onClick={() => {
+				localStorage.removeItem('alert-history');
+				setHistoryData([]); // refresh UI
+			}}
+			>
+			Clear Alert Log
+			</Button>
         </Box>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
