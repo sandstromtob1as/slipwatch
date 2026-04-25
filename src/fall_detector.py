@@ -13,12 +13,12 @@ from standalone_onnx_demo import SGG_ONNX_Standalone
 
 # How long a relation must persist before triggering an alert (seconds)
 RELATION_THRESHOLDS = {
-    'falling off':  1.0,   # Almost always dangerous
-    'lying on':     3.0,   # Could be yoga, but unlikely for elderly
-    'laying on':    3.0,
-    'on':           5.0,   # Ambiguous, require more time
-    'sitting on':  10.0,   # Give more time before alerting
-    'touching':    10.0,
+    'falling off':  8.0,   # Almost always dangerous
+    'lying on':     8.0,   # Could be yoga, but unlikely for elderly
+    'laying on':    8.0,
+    'on':           8.0,   # Ambiguous, require more time
+    'sitting on':  8.0,   # Give more time before alerting
+    'touching':    8.0,
 }
 
 ALERT_COOLDOWN = 60.0      # Seconds between alerts
