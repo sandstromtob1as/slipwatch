@@ -46,19 +46,53 @@ export default function Home() {
   const [selected, setSelected] = useState<Incident | null>(null);
   const [apiOnline, setApiOnline] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [handledIds, setHandledIds] = useState<number[]>([]);
+
+  const handleMarkAsHandled = (incident: Incident) => {
+  // add to handled IDs
+  setHandledIds((prev) => [...prev, incident.id]);
+
+  // remove immediately from UI
+  setIncidents((prev) => prev.filter((i) => i.id !== incident.id));
+
+  // close dialog if open
+  if (selected?.id === incident.id) {
+    setSelected(null);
+  }
+
+  // save to localStorage (your existing logic)
+  const existing = JSON.parse(localStorage.getItem('alert-history') || '[]');
+
+  const newEntry = {
+    id: incident.id,
+    personName: incident.triggered_by?.[0] || 'Unknown',
+    timestamp: incident.timestamp,
+    location: incident.location,
+    status: 'Resolved',
+    notes: incident.sms_message || 'Handled from overview page',
+  };
+
+  const updated = [newEntry, ...existing];
+  localStorage.setItem('alert-history', JSON.stringify(updated));
+};
 
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
         const res = await fetch(`${API_URL}/incidents`);
         const data = await res.json();
-        setIncidents(data);
+
+        // 🚀 FILTER OUT HANDLED ONES
+        const filtered = data.filter(
+          (incident: Incident) => !handledIds.includes(incident.id)
+        );
+
+        setIncidents(filtered);
         setApiOnline(true);
         setLastUpdated(new Date());
 
-        // Update selected incident if open and shap just became ready
         if (selected) {
-          const updated = data.find((i: Incident) => i.id === selected.id);
+          const updated = filtered.find((i: Incident) => i.id === selected.id);
           if (updated) setSelected(updated);
         }
       } catch {
@@ -67,9 +101,9 @@ export default function Home() {
     };
 
     fetchIncidents();
-    const interval = setInterval(fetchIncidents, 5000);
-    return () => clearInterval(interval);
-  }, [selected?.id]);
+      const interval = setInterval(fetchIncidents, 5000);
+      return () => clearInterval(interval);
+    }, [selected?.id, handledIds]);
 
   return (
     <div className="min-h-screen py-8">
@@ -172,6 +206,14 @@ export default function Home() {
                       className="mt-auto"
                     >
                       View Details
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      fullWidth
+                      onClick={() => handleMarkAsHandled(incident)}
+                    >
+                      Mark as Handled
                     </Button>
                   </Box>
                 </Box>
