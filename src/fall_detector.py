@@ -4,18 +4,13 @@ import sys
 import time
 import numpy as np
 import json
+import subprocess
+import uuid
 
 # Add SGG_Bench to path so we can import the standalone ONNX demo
 sgg_bench_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench'))
 sys.path.append(sgg_bench_path)
 from standalone_onnx_demo import SGG_ONNX_Standalone
-
-# Conceptual imports from llmSHAP based on its README framework
-# In a real environment, you would import the specific implemented wrappers:
-# from llmshap import DataHandler
-# from llmshap.wrappers import OpenAILlmWrapper
-# from llmshap.codecs import PromptCodec
-# from llmshap.explainer import Explainer
 
 class FallDetectionExplainer:
     def __init__(self, onnx_path, provider='CPUExecutionProvider'):
@@ -26,18 +21,10 @@ class FallDetectionExplainer:
             rel_conf=0.05, # Lowered to get more relationship hits
             box_conf=0.25  # Lowered further to detect bodies in awkward poses or motion blur
         )
-        
-        # Setup llmSHAP components (Conceptual setup)
-        # self.llm_wrapper = OpenAILlmWrapper(api_key=os.environ.get("OPENAI_API_KEY"))
-        # self.codec = PromptCodec(
-        #     prompt_template="Here is a scene graph generated from an image: {text}. "
-        #                     "Based on these relationships, has a person fallen and are they laying on the floor? "
-        #                     "Answer 'Yes' or 'No'."
-        # )
 
     def analyze_frame(self, frame):
         """
-        Processes a single frame, extracts the scene graph, and asks the LLM for an explanation.
+        Processes a single frame and extracts the scene graph.
         """
         frame_h, frame_w = frame.shape[:2]
         frame_area = frame_h * frame_w
@@ -72,22 +59,16 @@ class FallDetectionExplainer:
                     inter_x1, inter_y1 = max(xi1, xj1), max(yi1, yj1)
                     inter_x2, inter_y2 = min(xi2, xj2), min(yi2, yj2)
                     if inter_x2 > inter_x1 and inter_y2 > inter_y1:
-                    # If they touch/intersect at all, ignore the smaller box
-                    ignored_person_indices.add(i)
+                        # If they touch/intersect at all, ignore the smaller box
+                        ignored_person_indices.add(i)
 
         keep_box_indices = []
-        floors_detected = []
         for i, box in enumerate(boxes):
             if i in ignored_person_indices:
                 continue
             cls_name = self.sgg_model.obj_classes.get(int(box[4]), '?')
-            if 'floor' in cls_name.lower():
-                floors_detected.append(f"{cls_name} ({box[5]:.2f})")
             if any(imp in cls_name for imp in important_classes):
                 keep_box_indices.append(i)
-                
-        if floors_detected:
-            print(f"Floor found in frame: {', '.join(floors_detected)}")
                 
         old_to_new = {old: new for new, old in enumerate(keep_box_indices)}
         vis_boxes = boxes[keep_box_indices]
@@ -128,14 +109,9 @@ class FallDetectionExplainer:
         if scene_description:
             print(f"Detected Scene Graph: {scene_description}")
         
-        # 2. Run llmSHAP Explanation (Conceptual execution)
-        # data_handler = DataHandler(text=scene_description)
-        # explainer = Explainer(llm=self.llm_wrapper, data=data_handler, codec=self.codec)
-        # output, attributions = explainer.explain()
-        
-        # Mocking the llmSHAP output for the sake of the demonstration
         # More robust fall detection: iterate through relations to find a person lying/laying on the floor.
         is_fall = False
+        trigger_reason = "None"
         for rel_str in filtered_rels:
             # To explicitly ignore relations like 'wearing', we parse the triplet
             # and check each part individually for a more robust detection.
@@ -156,12 +132,15 @@ class FallDetectionExplainer:
                         width, height = x2 - x1, y2 - y1
                         
                         # Guard against SGG model hallucinating explicit fall relations when standing upright.
-                        # We ensure the box is significant in size but not taking up the entire screen (>70% area).
-                        # Aspect ratio > 1.2 avoids triggering on standing people with outstretched arms.
+                        # We ensure the box is significant in size but not taking up the entire screen (>40% area).
+                        # Note: This area limit is ONLY applied to the person box, surfaces like the floor can be larger.
                         box_area = width * height
-                        if height > (frame_h * 0.05) and width > (frame_w * 0.15) and (box_area / frame_area) < 0.7 and (width / height) > 1.2:
-                            is_fall = True
-                            break  # A fall is detected, no need to check further
+                        if height > (frame_h * 0.05) and width > (frame_w * 0.15) and (box_area / frame_area) < 0.4:
+                            # Require aspect ratio > 1.2 only for ambiguous relations to avoid false positives.
+                            if relation in ('lying on', 'laying on', 'falling off') or (width / height) > 1.2:
+                                is_fall = True
+                                trigger_reason = "SGG Relation"
+                                break  # A fall is detected, no need to check further
 
         # 3. Ultimate Fallback: Check bounding boxes of all detected people directly.
         # Often, the SGG model detects the person but completely misses the "floor" as an object.
@@ -176,18 +155,20 @@ class FallDetectionExplainer:
                     
                     box_area = width * height
                     # Size checks ignore small false positive boxes (like an isolated arm misclassified).
-                    # We also ignore boxes covering >70% of the screen (person standing extremely close to camera).
+                    # We also ignore boxes covering >40% of the screen (person standing extremely close to camera).
                     if height > (frame_h * 0.05) and width > (frame_w * 0.15) and (box_area / frame_area) < 0.4 and (width / height) > 1.2:
                         is_fall = True
+                        trigger_reason = "Bounding Box Fallback"
+                        filtered_rels.append(f"{i}_{cls_name} - lying on - floor: (inferred by bounding box)")
                         break
 
         output = "Yes" if is_fall else "No"
-        attributions = {"person": 0.2, "lying on": 0.6, "floor": 0.2} if output == "Yes" else {}
 
         # Collect extensive details for the JSON log
         details = {
             "full_relations": full_rels,
             "filtered_relations": filtered_rels,
+            "trigger_reason": trigger_reason,
             "person_boxes": []
         }
         for i, box in enumerate(boxes):
@@ -206,7 +187,7 @@ class FallDetectionExplainer:
                     "aspect_ratio": float(width / height) if height > 0 else 0.0
                 })
 
-        return output, attributions, vis_image, details
+        return output, vis_image, details
 
     def run_webcam(self, camera_index=0):
         """
@@ -230,6 +211,8 @@ class FallDetectionExplainer:
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(json_dir, exist_ok=True)
         
+        event_history = []
+        
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -238,46 +221,96 @@ class FallDetectionExplainer:
 
             # Safely analyze frame, catching potential local variable error if no boxes are detected
             try:
-                decision, explain_scores, annotated_img, details = self.analyze_frame(frame)
+                decision, annotated_img, details = self.analyze_frame(frame)
             except UnboundLocalError:
-                decision, explain_scores, annotated_img, details = "No", None, frame.copy(), {}
+                decision, annotated_img, details = "No", frame.copy(), {}
             
+            current_time = time.time()
+            
+            # Håll en rullande historik (senaste 10 sekunderna) av scenrelationer
+            event_history = [e for e in event_history if current_time - e['timestamp'] <= 10.0]
+            
+            # Filtrera relationerna för att minska brus och spara tokens för LLM
+            relations = details.get('filtered_relations')
+            if not relations:
+                # Fallback: Spara endast topp 5 relationer som involverar en person
+                person_rels = [r for r in details.get('full_relations', []) if 'person' in r.lower()]
+                relations = person_rels[:5]
+                
+            if relations:
+                # Deduplicate: Only append if the scene description has actually changed
+                if not event_history or event_history[-1]['scene_description'] != relations:
+                    event_history.append({
+                        "timestamp": current_time,
+                        "scene_description": relations
+                    })
+
             display_img = annotated_img if annotated_img is not None else frame.copy()
             
             # Check if fall has persisted for 3 second to take a screenshot and save details
             if decision == 'Yes':
-                last_fall_time = time.time()
+                last_fall_time = current_time
                 if fall_start_time is None:
-                    fall_start_time = time.time()
-                elif not screenshot_taken and (time.time() - fall_start_time) >= 3.0:
-                    timestamp = time.strftime("%Y%m%d-%H%M%S")
-                    filename = os.path.join(img_dir, f"fall_detected_{timestamp}.jpg")
-                    json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}.json")
+                    fall_start_time = current_time
+                elif not screenshot_taken and (current_time - fall_start_time) >= 3.0:
+                    timestamp = time.strftime("%Y%m%d")
+                    case_id = uuid.uuid4().hex[:8]
+                    filename = os.path.join(img_dir, f"fall_detected_{timestamp}_{case_id}.jpg")
+                    json_filename = os.path.join(json_dir, f"fall_detected_{timestamp}_{case_id}.json")
                     
                     cv2.imwrite(filename, display_img) # Saves the annotated image
                     
-                    # Save comprehensive details to JSON
+                    # Skapa en tidslinje som beskriver vad som hände innan och under fallet
+                    leading_up_to_fall = []
+                    during_fall = []
+                    for e in event_history:
+                        desc = ", ".join(e['scene_description']) if isinstance(e['scene_description'], list) else e['scene_description']
+                        if not desc:
+                            continue
+                        # Beräkna tiden i förhållande till när fallet startade (ex. T-2.50s eller T+1.00s)
+                        time_offset = round(e['timestamp'] - fall_start_time, 2)
+                        
+                        event_record = {
+                            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(e['timestamp'])),
+                            "relative_time": f"T{time_offset:+.2f}s",
+                            "activity": desc
+                        }
+                        
+                        if e['timestamp'] < fall_start_time:
+                            leading_up_to_fall.append(event_record)
+                        else:
+                            during_fall.append(event_record)
+                            
+                    # Spara den beskrivande situationen till JSON
                     fall_data = {
+                        "case_id": case_id,
                         "timestamp": timestamp,
-                        "decision": decision,
-                        "attributions": explain_scores,
-                        "scene_details": details
+                        "situation_description": {
+                            "leading_up_to_fall": leading_up_to_fall,
+                            "during_fall": during_fall
+                        },
+                        "scene_details_at_capture": details
                     }
                     with open(json_filename, 'w') as f:
                         json.dump(fall_data, f, indent=4)
                         
                     print(f"*** ALERT: Fall detected for 1+ seconds! Saved {filename} & {json_filename} ***")
+                    
+                    # Trigger the LLM interpreter asynchronously
+                    #interpreter_path = os.path.join(os.path.dirname(__file__), "llm_interpreter.py")
+                    #subprocess.Popen([sys.executable, interpreter_path, "--json", json_filename, "--image", filename])
+                    
                     screenshot_taken = True
             else:
                 # Apply leeway: only reset if we haven't seen a fall for > leeway_seconds
-                if last_fall_time is not None and (time.time() - last_fall_time) > leeway_seconds:
+                if last_fall_time is not None and (current_time - last_fall_time) > leeway_seconds:
                     fall_start_time = None
                     last_fall_time = None
                     screenshot_taken = False
 
             # Apply leeway to the UI display so the text doesn't flicker green/red
             display_decision = decision
-            if decision == 'No' and last_fall_time is not None and (time.time() - last_fall_time) <= leeway_seconds:
+            if decision == 'No' and last_fall_time is not None and (current_time - last_fall_time) <= leeway_seconds:
                 display_decision = 'Yes'
 
             # Display the decision
@@ -285,14 +318,6 @@ class FallDetectionExplainer:
             cv2.putText(display_img, f"Fall Detected: {display_decision}", (20, 40), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
             
-            # Display the llmSHAP attributions
-            if explain_scores:
-                y_offset = 80
-                cv2.putText(display_img, "Attributions:", (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-                for key, score in explain_scores.items():
-                    y_offset += 25
-                    cv2.putText(display_img, f"{key}: {score:.2f}", (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
             cv2.imshow('Fall Detection (Press q to quit)', display_img)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
