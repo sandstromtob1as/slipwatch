@@ -1,0 +1,88 @@
+{
+    "case_id": "2dba2b7f",
+    "timestamp": "20260425_125128",
+    "trigger_relation": "lying on",
+    "trigger_duration_seconds": 4.7,
+    "situation_description": {
+        "leading_up_to_fall": [
+            {
+                "timestamp": "2026-04-25 12:51:18",
+                "relative_time": "T-4.85s",
+                "activity": "3_person - lying on - floor: (inferred by bounding box)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:19",
+                "relative_time": "T-4.38s",
+                "activity": "5_person - lying on - floor: (inferred by bounding box)"
+            }
+        ],
+        "during_fall": [
+            {
+                "timestamp": "2026-04-25 12:51:23",
+                "relative_time": "T+0.00s",
+                "activity": "6_person - lying on - floor: (inferred by bounding box)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:25",
+                "relative_time": "T+1.45s",
+                "activity": "3_person - lying on - floor: (inferred by bounding box)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:25",
+                "relative_time": "T+1.95s",
+                "activity": "2_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:26",
+                "relative_time": "T+2.46s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:26",
+                "relative_time": "T+3.01s",
+                "activity": "1_person - sitting on - 0_floor: (triplet_score=0.07, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:27",
+                "relative_time": "T+3.55s",
+                "activity": "3_person - sitting on - 0_floor: (triplet_score=0.06, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:27",
+                "relative_time": "T+4.11s",
+                "activity": "0_person - sitting on - 1_floor: (triplet_score=0.06, rel_score=0.00)"
+            },
+            {
+                "timestamp": "2026-04-25 12:51:28",
+                "relative_time": "T+4.66s",
+                "activity": "1_person - lying on - floor: (inferred by bounding box)"
+            }
+        ]
+    },
+    "scene_details_at_capture": {
+        "full_relations": [
+            "1_person - has - 3_head: (triplet_score=0.06, rel_score=0.00)",
+            "3_head - of - 1_person: (triplet_score=0.06, rel_score=0.00)"
+        ],
+        "filtered_relations": [
+            "1_person - lying on - floor: (inferred by bounding box)"
+        ],
+        "trigger_reason": "Bounding Box Fallback",
+        "trigger_relation": "lying on",
+        "person_boxes": [
+            {
+                "class": "person",
+                "confidence": 0.5509466528892517,
+                "bbox": [
+                    166.84130859375,
+                    451.07061767578125,
+                    882.891357421875,
+                    633.0628051757812
+                ],
+                "width": 716.050048828125,
+                "height": 181.9921875,
+                "aspect_ratio": 3.934509754180908
+            }
+        ]
+    }
+}
