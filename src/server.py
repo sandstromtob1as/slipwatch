@@ -16,7 +16,7 @@ app.add_middleware(
 
 # In-memory stores
 incidents = []
-shap_results = {}  # incident_id -> shap result
+shap_results = {}
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 img_dir = os.path.join(BASE_DIR, "falls_images")
@@ -37,7 +37,7 @@ class IncidentPayload(BaseModel):
 def add_incident(incident_dict: dict):
     """Called directly from main.py to add an incident."""
     if any(i["id"] == incident_dict.get("id") for i in incidents):
-        print(f"⚠️ Duplicate incident ignored: {incident_dict.get('id')}")
+        print(f"Duplicate incident ignored: {incident_dict.get('id')}")
         return
 
     if incident_dict.get("screenshot_path"):
@@ -50,9 +50,8 @@ def add_incident(incident_dict: dict):
 
 
 def add_shap_result(incident_id: int, result: dict):
-    """Called from shap_interpreter when analysis is complete."""
+    """Called from main.py when SHAP analysis is complete."""
     shap_results[incident_id] = result
-    # Update incident with shap_ready flag
     for i in incidents:
         if i["id"] == incident_id:
             i["shap_ready"] = True

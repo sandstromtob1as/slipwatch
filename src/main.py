@@ -2,11 +2,13 @@ import json
 import time
 import os
 import sys
+import threading
+import uvicorn
+from dotenv import load_dotenv
+
 from models import FallIncident
 from llm_interpreter import generate_sms
 from sms_sender import send_sms, send_dummy_sms
-<<<<<<< HEAD
-=======
 from server import app, add_incident, add_shap_result
 from shap_interpreter import run_shap
 
@@ -31,7 +33,6 @@ def clean_triggered_by(raw: list[str]) -> list[str]:
         t for t in raw
         if not any(irr in t.lower() for irr in IRRELEVANT_RELATIONS)
     ]
-    # Deduplicate while preserving order
     return list(dict.fromkeys(filtered))[:4]
 
 
@@ -48,10 +49,9 @@ def post_to_dashboard(incident: FallIncident):
     })
     print("Incident added to dashboard")
 
->>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
 
 def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncident:
-    
+
     # Bygg triggered_by från event history
     raw_triggered = []
     for event in fall_data["situation_description"]["during_fall"]:
@@ -71,41 +71,27 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     # 1. Skapa incident
     incident = FallIncident(
         timestamp=time.strftime("%H:%M:%S"),
-<<<<<<< HEAD
-        location="unknown",
-        triggered_by=triggered_by[:4],
-=======
         location=os.getenv("CAMERA_LOCATION", "Living Room"),
         triggered_by=triggered_by,
->>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
         last_upright_position=last_upright,
         screenshot_path=screenshot_path
     )
 
-    # 2. Kör llmSHAP först och vänta på sannolikheten
+    # 2. Kör llmSHAP och vänta på sannolikheten
     shap_result = run_shap(incident)
     if not shap_result:
-        print(f"SHAP-analysis failed for incident {incident.id}. Canceling fall registration.")
+        print(f"SHAP analysis failed for incident {incident.id}. Canceling fall registration.")
         return incident
 
-<<<<<<< HEAD
-    # 3. Skicka SMS
-    #send_sms(incident.sms_message) #ANVÄND ENDAST FÖR DEMO!!
-    send_dummy_sms(incident.sms_message) #Dummy sms för utveckling
-=======
     likelihood = shap_result.get("fall_likelihood_percent", 0.0)
-    print(f"🔎 Fall likelihood: {likelihood}%")
+    print(f"Fall likelihood: {likelihood}%")
 
     if likelihood < FALL_LIKELIHOOD_THRESHOLD:
-        print(
-            f"Does not meet the threshold ({likelihood}% < {FALL_LIKELIHOOD_THRESHOLD}%). "
-            "No alarms or reports sent."
-        )
+        print(f"Does not meet threshold ({likelihood}% < {FALL_LIKELIHOOD_THRESHOLD}%). No alarms sent.")
         return incident
 
     # 3. Generera SMS
     incident.sms_message = generate_sms(incident)
-    #print(f"\nText message:\n{incident.sms_message}")
 
     # 4. Skicka SMS
     # send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
@@ -114,64 +100,41 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     # 5. Skicka till dashboard
     post_to_dashboard(incident)
     add_shap_result(incident.id, shap_result)
->>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
 
-    print(f"\nIncident created with ID: {incident.id}")
+    print(f"Incident created with ID: {incident.id}")
     return incident
 
 
-# Test med JSON-fil
 if __name__ == "__main__":
-    # Om du vill testa med en riktig JSON från detector.py:
-    # .venv/bin/python src/main.py src/falls_data/fall_detected_XXXX.json
+    sys.path.append(os.path.dirname(__file__))
+    from fall_detector import FallDetectionExplainer
 
+    onnx_model_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'yolov8m', 'model.onnx')
+    )
+
+    # Allow manual JSON testing: .venv/bin/python src/main.py path/to/fall.json
     if len(sys.argv) > 1:
         json_path = sys.argv[1]
         with open(json_path, "r") as f:
             fall_data = json.load(f)
         on_fall_detected(fall_data)
-
-<<<<<<< HEAD
     else:
-        # Fallback testdata
-        fall_data = {
-            "situation_description": {
-                "leading_up_to_fall": [
-                    {
-                        "timestamp": "2025-01-01 14:30:15",
-                        "activity": "person standing near kitchen counter"
-                    }
-                ],
-                "during_fall": [
-                    {
-                        "timestamp": "2025-01-01 14:32:10",
-                        "activity": "person lying on floor"
-                    },
-                    {
-                        "timestamp": "2025-01-01 14:32:15",
-                        "activity": "no movement detected"
-                    }
-                ]
-            }
-        }
-        on_fall_detected(fall_data, screenshot_path=None)
-=======
-    if not os.path.exists(onnx_model_path):
-        print(f"ERROR: the ONNX-model is missing: {onnx_model_path}")
-        sys.exit(1)
+        if not os.path.exists(onnx_model_path):
+            print(f"ERROR: ONNX model missing: {onnx_model_path}")
+            sys.exit(1)
 
-    # Starta FastAPI i bakgrunden
-    server_thread = threading.Thread(
-        target=uvicorn.run,
-        args=(app,),
-        kwargs={"host": "0.0.0.0", "port": 8000, "log_level": "warning"},
-        daemon=True
-    )
-    server_thread.start()
-    print("Dashboard API is running on http://localhost:8000")
+        # Start FastAPI in background
+        server_thread = threading.Thread(
+            target=uvicorn.run,
+            args=(app,),
+            kwargs={"host": "0.0.0.0", "port": 8000, "log_level": "warning"},
+            daemon=True
+        )
+        server_thread.start()
+        print("Dashboard API is running on http://localhost:8000")
 
-    # Starta detektor
-    print("Starting SlipWatch...")
-    detector = FallDetectionExplainer(onnx_path=onnx_model_path)
-    detector.run_webcam(on_fall_callback=on_fall_detected)
->>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
+        # Start detector
+        print("Starting SlipWatch...")
+        detector = FallDetectionExplainer(onnx_path=onnx_model_path)
+        detector.run_webcam(on_fall_callback=on_fall_detected)
