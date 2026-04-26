@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   Warning,
   Dashboard,
@@ -27,10 +28,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage }) => {
     <div className="w-64 sticky top-0 h-screen bg-gray-800 border-r border-gray-700 flex flex-col">
       {/* Logo/Brand */}
       <div className="p-6 border-b border-gray-700">
-        <h1 className="text-xl font-bold text-white flex items-center gap-2">
-          <Warning className="text-red-500" />
-          SlipWatch
-        </h1>
+		<Image
+			src="/content.png"
+			alt="SlipWatch Logo"
+			width={200}
+			height={100}
+			className="object-contain"
+			priority
+		/>
       </div>
 
       {/* Navigation */}
