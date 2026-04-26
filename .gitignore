@@ -3,3 +3,5 @@
 *.pyc
 src/falls_data/*
 src/falls_images/*
+src/__pycache__/fall_detector.cpython-312.pyc
+SGG_Bench/__pycache__/standalone_onnx_demo.cpython-312.pyc
