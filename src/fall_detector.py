@@ -44,7 +44,10 @@ class FallDetectionExplainer:
 
         if not full_rels:
             return "No", None, None, {}
+<<<<<<< HEAD
+=======
 
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
         person_keywords = ['person', 'man', 'woman', 'boy', 'girl', 'child', 'human', 'body', 'people', 'patient']
         important_classes = person_keywords + ['floor', 'carpet', 'rug', 'ground', 'couch', 'bed', 'chair', 'table', 'desk']
         surface_keywords = ['floor', 'ground', 'carpet', 'rug', 'mat', 'tile', 'wood']
@@ -207,6 +210,12 @@ class FallDetectionExplainer:
         return output, vis_image, trigger_relation, details
 
     def run_webcam(self, camera_index=0, on_fall_callback=None):
+<<<<<<< HEAD
+        """
+        Runs the fall detection continuously on a webcam feed.
+        """
+=======
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
         cap = cv2.VideoCapture(camera_index)
         if not cap.isOpened():
             print(f"Error: Could not open webcam {camera_index}.")
@@ -218,14 +227,20 @@ class FallDetectionExplainer:
         last_fall_time = None       # time of last confirmed fall frame
         last_alert_time = None      # time of last alert sent
         alert_sent = False          # has alert been sent for this fall session
+<<<<<<< HEAD
+=======
 
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
         img_dir = os.path.join(os.path.dirname(__file__), "falls_images")
         json_dir = os.path.join(os.path.dirname(__file__), "falls_data")
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(json_dir, exist_ok=True)
 
         event_history = []
+<<<<<<< HEAD
+=======
 
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -242,7 +257,10 @@ class FallDetectionExplainer:
 
             # --- Update event history (rolling 10s window) ---
             event_history = [e for e in event_history if current_time - e['timestamp'] <= 10.0]
+<<<<<<< HEAD
+=======
 
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
             relations = details.get('filtered_relations')
             if not relations:
                 person_rels = [r for r in details.get('full_relations', []) if 'person' in r.lower()]
@@ -362,6 +380,17 @@ class FallDetectionExplainer:
         cap.release()
         cv2.destroyAllWindows()
 
+<<<<<<< HEAD
+if __name__ == "__main__":
+    # Example Usage
+    # Make sure to download the IndoorVG model first as it contains 'person', 'floor', and 'laying on'
+    onnx_model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SGG_Bench', 'react_indoorvg_yolov8m.onnx'))
+    
+    if not os.path.exists(onnx_model_path):
+        print(f"Please download the model first to {onnx_model_path}")
+        sys.exit(1)
+        
+=======
 
 if __name__ == "__main__":
     onnx_model_path = os.path.abspath(
@@ -372,5 +401,6 @@ if __name__ == "__main__":
         print(f"Please download the model first to {onnx_model_path}")
         sys.exit(1)
 
+>>>>>>> cdd3f31e083d5244b885f2f99fbd9f487e928087
     detector = FallDetectionExplainer(onnx_path=onnx_model_path)
     detector.run_webcam()
