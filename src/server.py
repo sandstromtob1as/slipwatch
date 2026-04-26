@@ -14,8 +14,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory incident store
+# In-memory stores
 incidents = []
+shap_results = {}  # incident_id -> shap result
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 img_dir = os.path.join(BASE_DIR, "falls_images")
@@ -40,7 +41,20 @@ def add_incident(incident_dict: dict):
         incident_dict["image_url"] = f"http://localhost:8000/images/{filename}"
     else:
         incident_dict["image_url"] = None
+    incident_dict["shap_ready"] = False
     incidents.append(incident_dict)
+
+
+def add_shap_result(incident_id: int, result: dict):
+    """Called from shap_interpreter when analysis is complete."""
+    shap_results[incident_id] = result
+    # Update incident with shap_ready flag
+    for i in incidents:
+        if i["id"] == incident_id:
+            i["shap_ready"] = True
+            i["shap"] = result
+            break
+    print(f"SHAP result added for incident {incident_id}")
 
 
 @app.post("/incidents")
@@ -61,6 +75,13 @@ def get_incident(incident_id: int):
         if i["id"] == incident_id:
             return i
     raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.get("/incidents/{incident_id}/shap")
+def get_shap(incident_id: int):
+    if incident_id in shap_results:
+        return shap_results[incident_id]
+    raise HTTPException(status_code=404, detail="SHAP not ready yet")
 
 
 @app.get("/health")

@@ -1,9 +1,9 @@
 .env
 *.onnx
-<<<<<<< HEAD
 *.pyc
+__pycache__/
 src/falls_data/*
 src/falls_images/*
-=======
-*.pyc
->>>>>>> 4e8cac4df10392e7549899157381fc056cc7fd10
+.DS_Store
+__pycache__/
+**/__pycache__/
