@@ -4,3 +4,5 @@
 src/falls_data/*
 src/falls_images/*
 .DS_Store
+__pycache__/
+**/__pycache__/
