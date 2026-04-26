@@ -9,9 +9,15 @@ from models import FallIncident
 from llm_interpreter import generate_sms
 from sms_sender import send_sms, send_dummy_sms
 from server import app, add_incident, add_shap_result
-from shap_interpreter import run_shap_async
+from shap_interpreter import run_shap
 
 load_dotenv()
+
+threshold_raw = os.getenv('FALL_LIKELIHOOD_THRESHOLD', '65')
+FALL_LIKELIHOOD_THRESHOLD = float(threshold_raw)
+if FALL_LIKELIHOOD_THRESHOLD < 1.0:
+    FALL_LIKELIHOOD_THRESHOLD *= 100.0
+FALL_LIKELIHOOD_THRESHOLD = max(0.0, min(100.0, FALL_LIKELIHOOD_THRESHOLD))
 
 # Relations that are not relevant for fall detection
 IRRELEVANT_RELATIONS = ['wearing', 'holding', 'carrying', 'looking at', 'using', 'reading']
@@ -71,24 +77,33 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
         screenshot_path=screenshot_path
     )
 
-    # 2. Generera SMS
+    # 2. Kör llmSHAP först och vänta på sannolikheten
+    shap_result = run_shap(incident)
+    if not shap_result:
+        print(f"⚠️ SHAP-analys misslyckades för incident {incident.id}. Avbryter fallregistrering.")
+        return incident
+
+    likelihood = shap_result.get("fall_likelihood_percent", 0.0)
+    print(f"🔎 Fall likelihood: {likelihood}%")
+
+    if likelihood < FALL_LIKELIHOOD_THRESHOLD:
+        print(
+            f"⚠️ Håller inte tröskeln ({likelihood}% < {FALL_LIKELIHOOD_THRESHOLD}%). "
+            "Inga fallalarm eller dashboard-rapport skickas."
+        )
+        return incident
+
+    # 3. Generera SMS
     incident.sms_message = generate_sms(incident)
     print(f"\n📱 SMS:\n{incident.sms_message}")
 
-    # 3. Skicka SMS
+    # 4. Skicka SMS
     # send_sms(incident.sms_message)  # ANVÄND ENDAST FÖR DEMO!!
     send_dummy_sms(incident.sms_message)  # Dummy för utveckling
 
-    # 4. Skicka till dashboard
+    # 5. Skicka till dashboard
     post_to_dashboard(incident)
-
-    # 5. Kör llmSHAP i bakgrunden
-    # llmSHAP analyserar vilka features som bidrog mest till fallbeslutet
-    # Resultatet visas i React-dashboarden under "Why AI flagged this"
-    run_shap_async(
-        incident,
-        on_complete=lambda result: add_shap_result(incident.id, result)
-    )
+    add_shap_result(incident.id, shap_result)
 
     print(f"\n✅ Incident skapad med ID: {incident.id}")
     return incident
