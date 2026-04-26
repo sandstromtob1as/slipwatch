@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  Avatar,
   Card,
   CardHeader,
   CardMedia,
@@ -45,20 +46,69 @@ export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selected, setSelected] = useState<Incident | null>(null);
   const [apiOnline, setApiOnline] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [handledIds, setHandledIds] = useState<number[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem('handled-ids');
+    if (!stored) return [];
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  });
+  const [residentName] = useState('Tobias');
+  const [cameraAddress] = useState('MIT place');
+
+  const handleMarkAsHandled = (incident: Incident) => {
+  // add to handled IDs
+  setHandledIds((prev) => {
+    const next = [...prev, incident.id];
+    localStorage.setItem('handled-ids', JSON.stringify(next));
+    return next;
+  });
+
+  // remove immediately from UI
+  setIncidents((prev) => prev.filter((i) => i.id !== incident.id));
+
+  // close dialog if open
+  if (selected?.id === incident.id) {
+    setSelected(null);
+  }
+
+  // save to localStorage (alert history)
+  const existing = JSON.parse(localStorage.getItem('alert-history') || '[]');
+
+  const newEntry = {
+    id: incident.id,
+    personName: incident.triggered_by?.[0] || 'Unknown',
+    timestamp: incident.timestamp,
+    location: incident.location,
+    status: 'Resolved',
+    notes: incident.sms_message || 'Handled from overview page',
+  };
+
+  const updated = [newEntry, ...existing];
+  localStorage.setItem('alert-history', JSON.stringify(updated));
+};
 
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
         const res = await fetch(`${API_URL}/incidents`);
         const data = await res.json();
-        setIncidents(data);
+
+        // 🚀 FILTER OUT HANDLED ONES
+        const filtered = data.filter(
+          (incident: Incident) => !handledIds.includes(incident.id)
+        );
+
+        setIncidents(filtered);
         setApiOnline(true);
         setLastUpdated(new Date());
 
-        // Update selected incident if open and shap just became ready
         if (selected) {
-          const updated = data.find((i: Incident) => i.id === selected.id);
+          const updated = filtered.find((i: Incident) => i.id === selected.id);
           if (updated) setSelected(updated);
         }
       } catch {
@@ -67,9 +117,14 @@ export default function Home() {
     };
 
     fetchIncidents();
-    const interval = setInterval(fetchIncidents, 5000);
-    return () => clearInterval(interval);
-  }, [selected?.id]);
+      const interval = setInterval(fetchIncidents, 5000);
+      return () => clearInterval(interval);
+    }, [selected?.id, handledIds]);
+
+  // Set initial lastUpdated on client mount to avoid hydration mismatch
+  useEffect(() => {
+    setLastUpdated(new Date());
+  }, []);
 
   return (
     <div className="min-h-screen py-8">
@@ -91,7 +146,7 @@ export default function Home() {
               size="small"
             />
             <Typography variant="caption" className="text-gray-500">
-              Updated {lastUpdated.toLocaleTimeString()}
+              Updated {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Loading...'}
             </Typography>
           </Box>
         </Box>
@@ -101,8 +156,13 @@ export default function Home() {
             {incidents.map((incident) => (
               <Card
                 key={incident.id}
-                sx={{ backgroundColor: '#1f2937', borderColor: '#374151' }}
-                className="border border-gray-700 shadow-lg"
+                sx={{
+                  backgroundColor: '#1f2937',
+                  borderColor: '#ef4444',
+                  borderWidth: 2,
+                  borderStyle: 'solid'
+                }}
+                className="border-2 border-red-500 shadow-lg"
               >
                 <Box className="lg:flex">
                   <Box className="lg:w-2/3 h-64 lg:h-auto bg-gray-800 flex items-center justify-center overflow-hidden relative">
@@ -173,17 +233,37 @@ export default function Home() {
                     >
                       View Details
                     </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      fullWidth
+                      onClick={() => handleMarkAsHandled(incident)}
+                    >
+                      Mark as Handled
+                    </Button>
                   </Box>
                 </Box>
               </Card>
             ))}
           </Box>
         ) : (
-          <Card sx={{ backgroundColor: '#1f2937' }} className="p-12 text-center border border-gray-700">
-            <CheckCircleIcon sx={{ fontSize: 48, color: '#4ade80', marginBottom: 2 }} />
-            <Typography variant="h6" className="text-gray-300">
-              No falls detected — system is monitoring
-            </Typography>
+          <Card sx={{ backgroundColor: '#111827', borderColor: '#374151', borderWidth: 1, borderStyle: 'solid' }} className="p-8 border shadow-lg">
+            <Box className="flex flex-col lg:flex-row items-center gap-6">
+              <Avatar sx={{ bgcolor: '#2563eb', width: 72, height: 72, fontSize: '1.25rem' }}>
+                {residentName.split(' ').map((word) => word[0]).join('')}
+              </Avatar>
+              <Box className="text-left lg:text-left">
+                <Typography variant="h5" className="text-white font-semibold">
+                  {residentName}
+                </Typography>
+                <Typography variant="body2" className="text-gray-400 mt-1">
+                  {cameraAddress}
+                </Typography>
+                <Typography variant="body2" className="text-gray-400 mt-4">
+                  No active alerts at the moment. The camera is monitoring the area continuously.
+                </Typography>
+              </Box>
+            </Box>
           </Card>
         )}
       </Container>

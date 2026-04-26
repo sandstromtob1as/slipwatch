@@ -36,6 +36,10 @@ class IncidentPayload(BaseModel):
 
 def add_incident(incident_dict: dict):
     """Called directly from main.py to add an incident."""
+    if any(i["id"] == incident_dict.get("id") for i in incidents):
+        print(f"⚠️ Duplicate incident ignored: {incident_dict.get('id')}")
+        return
+
     if incident_dict.get("screenshot_path"):
         filename = os.path.basename(incident_dict["screenshot_path"])
         incident_dict["image_url"] = f"http://localhost:8000/images/{filename}"

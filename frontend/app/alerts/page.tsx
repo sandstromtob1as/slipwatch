@@ -23,34 +23,17 @@ interface AlertHistoryItem {
   notes: string;
 }
 
-const historyData: AlertHistoryItem[] = [
-  {
-    id: 'A-1024',
-    personName: 'Ernest Brown',
-    timestamp: '2025-04-23 19:05:12',
-    location: 'Kitchen',
-    status: 'Resolved',
-    notes: 'Quick response team arrived and checked on the person. No injuries reported.',
-  },
-  {
-    id: 'A-1025',
-    personName: 'Helen Moore',
-    timestamp: '2025-04-24 04:22:37',
-    location: 'Hallway',
-    status: 'Reviewed',
-    notes: 'False-positive alert after a pet triggered the motion sensor. System sensitivity updated.',
-  },
-  {
-    id: 'A-1026',
-    personName: 'George King',
-    timestamp: '2025-04-24 08:48:09',
-    location: 'Bedroom',
-    status: 'Escalated',
-    notes: 'Medical team contacted after fall detection. Monitoring continues until clearance.',
-  },
-];
-
 export default function AlertLogPage() {
+  const [historyData, setHistoryData] = React.useState<AlertHistoryItem[]>([]);
+
+  React.useEffect(() => {
+    const stored = localStorage.getItem('alert-history');
+
+    if (stored) {
+      setHistoryData(JSON.parse(stored));
+    }
+  }, []);
+
   return (
     <div className="min-h-screen py-8">
       <Container maxWidth="lg">
@@ -62,46 +45,77 @@ export default function AlertLogPage() {
             <HistoryIcon className="text-blue-400" fontSize="large" />
             Alert Log History
           </Typography>
-          <Typography variant="body1" className="text-gray-300">
-            Review past fall events and incident outcomes. This history helps you verify system performance and follow up on resolved or escalated alerts.
-          </Typography>
+
+		  <Button
+			variant="contained"
+			color="error"
+			onClick={() => {
+				localStorage.removeItem('alert-history');
+				setHistoryData([]); // refresh UI
+			}}
+			>
+			Clear Alert Log
+			</Button>
         </Box>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {historyData.map((entry) => (
-            <div key={entry.id}>
-              <Card sx={{ backgroundColor: '#1f2937', borderColor: '#374151' }} className="border border-gray-700 hover:border-gray-600 transition-colors">
+          {historyData.length > 0 ? (
+            historyData.map((entry) => (
+              <Card
+                key={entry.id}
+                sx={{ backgroundColor: '#1f2937', borderColor: '#374151' }}
+                className="border border-gray-700"
+              >
                 <CardContent className="p-6">
-                  <Box className="flex items-start justify-between gap-4 mb-4">
+                  <Box className="flex items-start justify-between mb-4">
                     <Box>
-                      <Typography variant="h6" className="font-bold text-white">
+                      <Typography className="text-white font-bold">
                         {entry.personName}
                       </Typography>
-                      <Typography variant="caption" className="text-gray-400">
+                      <Typography className="text-gray-400 text-sm">
                         {entry.timestamp}
                       </Typography>
                     </Box>
+
                     <Chip
                       label={entry.status}
-                      color={entry.status === 'Resolved' ? 'success' : entry.status === 'Escalated' ? 'error' : 'warning'}
-                      icon={entry.status === 'Resolved' ? <CheckCircleIcon /> : entry.status === 'Escalated' ? <WarningIcon /> : undefined}
+                      color={
+                        entry.status === 'Resolved'
+                          ? 'success'
+                          : entry.status === 'Escalated'
+                          ? 'error'
+                          : 'warning'
+                      }
                       size="small"
+                      icon={
+                        entry.status === 'Resolved' ? (
+                          <CheckCircleIcon />
+                        ) : (
+                          <WarningIcon />
+                        )
+                      }
                     />
                   </Box>
 
-                  <Typography variant="body2" className="text-gray-300 mb-3">
+                  <Typography className="text-gray-300 mb-2">
                     Location: <span className="text-white">{entry.location}</span>
                   </Typography>
-                  <Typography variant="body2" className="text-gray-300 mb-4">
+
+                  <Typography className="text-gray-400 mb-4">
                     {entry.notes}
                   </Typography>
-                  <Button variant="outlined" color="primary" fullWidth>
+
+                  <Button variant="outlined" fullWidth>
                     View Full Report
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-          ))}
+            ))
+          ) : (
+            <Typography className="text-gray-400">
+              No alert history yet.
+            </Typography>
+          )}
         </div>
       </Container>
     </div>
