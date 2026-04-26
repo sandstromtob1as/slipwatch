@@ -1,6 +1,7 @@
 .env
 *.onnx
 *.pyc
+__pycache__/
 src/falls_data/*
 src/falls_images/*
 .DS_Store

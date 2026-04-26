@@ -1,7 +1,9 @@
 import os
+import re
 import json
 import threading
 from llmSHAP import DataHandler, BasicPromptCodec, ShapleyAttribution
+from llmSHAP.image import Image
 from llmSHAP.llm import OpenAIInterface
 from models import FallIncident
 
@@ -48,6 +50,40 @@ def extract_label(val, fallback: str) -> str:
     return fallback
 
 
+def extract_likelihood(output: str) -> float:
+    """Find a numeric likelihood percentage in the model output."""
+    match = re.search(r"([0-9]+(?:\.[0-9]+)?)\s*%", output)
+    if match:
+        value = float(match.group(1))
+        return max(0.0, min(100.0, value))
+    # Fallback: try to infer from common words
+    lowered = output.lower()
+    if "very likely" in lowered or "very probable" in lowered:
+        return 90.0
+    if "likely" in lowered or "probable" in lowered:
+        return 70.0
+    if "unlikely" in lowered or "not likely" in lowered:
+        return 25.0
+    if "almost certainly" in lowered or "definitely" in lowered:
+        return 95.0
+    return 50.0
+
+
+def make_json_safe(value):
+    if isinstance(value, Image):
+        return str(value)
+    if isinstance(value, dict):
+        return {
+            str(key): make_json_safe(val)
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [make_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [make_json_safe(item) for item in value]
+    return value
+
+
 def run_shap(incident: FallIncident, on_complete=None) -> dict:
     """
     Runs llmSHAP attribution on a FallIncident.
@@ -64,20 +100,23 @@ def run_shap(incident: FallIncident, on_complete=None) -> dict:
             seen.add(clean)
             data[f"feature_{len(data)}"] = clean
 
+    if incident.screenshot_path and os.path.exists(incident.screenshot_path):
+        data["fall_image"] = Image(image_path=incident.screenshot_path)
+
     if not data:
         print("llmSHAP: no more features to analyze")
         return {}
-
-    print(f"\nllmSHAP is analyzing {incident.id} with features: {data}")
+    
+    print(f"\nllmSHAP is analyzing {incident.id} with features: {list(data.keys())}")
 
     handler = DataHandler(data)
 
     prompt_codec = BasicPromptCodec(
-        system="You are analyzing sensor data from an elderly fall detection system. "
-               "The data contains observations about a person's position and movement. "
-               "Determine which features most strongly indicate that a fall has occurred. "
-               "Answer ONLY with: FALL CONFIRMED or FALSE ALARM, "
-               "followed by one sentence explaining your reasoning."
+        system="You are analyzing a possible fall from a security camera image and a short set of observations. "
+               "Use the image as the primary evidence and the observations only for context. "
+               "Answer with a single likelihood percentage between 0 and 100, and one short explanation. "
+               "Example: 'LIKELIHOOD: 82% - The person is lying on the floor with limbs extended, indicating a fall.' "
+               "Do not output any additional commentary."
     )
 
     llm = OpenAIInterface(model_name="gpt-4o-mini")
@@ -94,20 +133,24 @@ def run_shap(incident: FallIncident, on_complete=None) -> dict:
     scored = []
     for key, val in result.attribution.items():
         score = extract_score(val)
-        label = extract_label(val, data.get(key, key))
+        label = extract_label(val, str(data.get(key, key)))
         scored.append((label, score))
 
     # Sortera högst till lägst
     scored.sort(key=lambda x: x[1], reverse=True)
 
     readable_attribution = {label: round(score, 4) for label, score in scored}
+    likelihood = extract_likelihood(result.output)
 
     output = {
         "incident_id": incident.id,
         "verdict": result.output,
+        "fall_likelihood_percent": round(likelihood, 2),
         "attribution": readable_attribution,
         "features": data
     }
+
+    safe_output = make_json_safe(output)
 
     # Spara till JSON
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -116,14 +159,14 @@ def run_shap(incident: FallIncident, on_complete=None) -> dict:
     shap_path = os.path.join(shap_dir, f"shap_{incident.id}.json")
 
     with open(shap_path, "w") as f:
-        json.dump(output, f, indent=4)
+        json.dump(safe_output, f, indent=4)
 
     print(f"llmSHAP finished processing incident {incident.id}: {readable_attribution}")
 
     if on_complete:
-        on_complete(output)
+        on_complete(safe_output)
 
-    return output
+    return safe_output
 
 
 def run_shap_async(incident: FallIncident, on_complete=None):
