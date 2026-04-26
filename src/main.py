@@ -85,7 +85,7 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
     # 2. Kör llmSHAP först och vänta på sannolikheten
     shap_result = run_shap(incident)
     if not shap_result:
-        print(f"⚠️ SHAP-analys misslyckades för incident {incident.id}. Avbryter fallregistrering.")
+        print(f"SHAP-analysis failed for incident {incident.id}. Canceling fall registration.")
         return incident
 
 <<<<<<< HEAD
@@ -98,8 +98,8 @@ def on_fall_detected(fall_data: dict, screenshot_path: str = None) -> FallIncide
 
     if likelihood < FALL_LIKELIHOOD_THRESHOLD:
         print(
-            f"⚠️ Håller inte tröskeln ({likelihood}% < {FALL_LIKELIHOOD_THRESHOLD}%). "
-            "Inga fallalarm eller dashboard-rapport skickas."
+            f"Does not meet the threshold ({likelihood}% < {FALL_LIKELIHOOD_THRESHOLD}%). "
+            "No alarms or reports sent."
         )
         return incident
 
